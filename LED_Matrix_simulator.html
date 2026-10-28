@@ -1,0 +1,2649 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>LED Matrix Design Studio</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #080d16;
+        --panel: #111a29;
+        --panel2: #172235;
+        --line: #2b3a50;
+        --text: #ecf2fa;
+        --muted: #91a7c4;
+        --accent: #ffbc65;
+        --ok: #75dfaf;
+        --bad: #ff8d8d;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.45 system-ui, -apple-system, Segoe UI, Arial;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+      button {
+        cursor: pointer;
+        border: 1px solid var(--line);
+        background: var(--panel2);
+        color: var(--text);
+        border-radius: 9px;
+        padding: 9px 12px;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      button.primary,
+      button.active {
+        background: #4c341d;
+        border-color: #bb8647;
+        color: #ffe0ad;
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      input,
+      select {
+        background: #0c1523;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px;
+        min-width: 0;
+        width: 100%;
+      }
+      input[type="range"] {
+        accent-color: var(--accent);
+        padding: 0;
+      }
+      input[type="color"] {
+        height: 40px;
+        padding: 3px;
+      }
+      input[type="file"] {
+        font-size: 12px;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      header {
+        padding: 16px 23px;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        background: #0e1624;
+      }
+      header h1 {
+        font-size: 19px;
+        margin: 0;
+      }
+      header span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .badge {
+        padding: 5px 10px;
+        border: 1px solid #57482d;
+        color: #ffd59c;
+        border-radius: 999px;
+        font-size: 12px;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 360px minmax(0, 1fr);
+        min-height: calc(100vh - 67px);
+      }
+      aside {
+        border-right: 1px solid var(--line);
+        background: #0e1522;
+        padding: 15px;
+        overflow: auto;
+        max-height: calc(100vh - 68px);
+      }
+      .tabs {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      .tabs button {
+        font-size: 12px;
+        padding: 7px 9px;
+      }
+      .pane {
+        display: none;
+      }
+      .pane.active {
+        display: block;
+      }
+      .group {
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        padding: 14px;
+        margin: 0 0 12px;
+        background: var(--panel);
+      }
+      h2 {
+        font-size: 13px;
+        margin: 0 0 13px;
+      }
+      h3 {
+        font-size: 12px;
+        margin: 12px 0 8px;
+        color: #d9e3f1;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .stack {
+        display: grid;
+        gap: 12px;
+      }
+      .buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .help {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 8px 0;
+      }
+      .workspace {
+        padding: 18px;
+        min-width: 0;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+        padding: 13px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        margin-bottom: 14px;
+      }
+      .toolbar label {
+        min-width: 110px;
+        flex: 1;
+      }
+      .stage {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 18px;
+        min-height: 430px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .stage:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(#8b9aaf17 1px, transparent 1px);
+        background-size: 18px 18px;
+        pointer-events: none;
+      }
+      .stage canvas {
+        position: relative;
+        width: 100%;
+        max-width: 920px;
+        height: 420px;
+        touch-action: none;
+        cursor: crosshair;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 11px;
+        margin-top: 14px;
+      }
+      .metric {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 13px;
+        border-radius: 12px;
+      }
+      .metric b {
+        display: block;
+        font-size: 19px;
+      }
+      .metric small {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .footnote {
+        color: var(--muted);
+        font-size: 12px;
+        margin: 15px 2px;
+      }
+      .notice {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      .good {
+        color: var(--ok);
+      }
+      .bad {
+        color: var(--bad);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+      td,
+      th {
+        padding: 7px;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+      }
+      .scroll {
+        max-height: 210px;
+        overflow: auto;
+      }
+      #comparison {
+        display: none;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      #comparison.show {
+        display: grid;
+      }
+      .compare {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        padding: 13px;
+        border-radius: 13px;
+      }
+      .compare canvas {
+        width: 100%;
+        height: 230px;
+      }
+      .sr {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .pcb-summary { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+      .pcb-stat { border:1px solid var(--line); border-radius:10px; padding:10px; background:#0c1523; }
+      .pcb-stat strong {display:block; font-size:16px; color:var(--text); font-variant-numeric:tabular-nums;}
+      .pcb-stat small {display:block; color:var(--muted); font-size:11px; margin-top:3px;}
+      .pcb-heat {width:100%; height:auto; border:1px solid var(--line); border-radius:10px; background:#0b1422;}
+      @media (max-width: 950px) {
+        main {
+          display: block;
+        }
+        aside {
+          max-height: none;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+        .stage {
+          min-height: 330px;
+        }
+        .stage canvas {
+          height: 315px;
+        }
+        .metrics {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* Board-outline generator */
+      .outline-canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        background: #091220;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      .outline-results {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .outline-result {
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #0c1523;
+      }
+      .outline-result b { display: block; font-size: 17px; }
+      .outline-result small { color: var(--muted); font-size: 11px; }
+      .outline-note { padding: 10px; border-radius: 9px; background: #1c2a3e; color: #cbd9ec; font-size: 12px; }
+      .outline-note.warn { border-left: 3px solid #f7b466; }
+      .outline-choices td:nth-child(n+2),
+      .outline-choices th:nth-child(n+2) { text-align: right; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>LED Matrix Design Studio</h1>
+        <span
+          >IS31FL3741A · 39 CS × 9 SW · 351 channels · Visual & layout
+          planning</span
+        >
+      </div>
+      <div class="badge" id="headCount">256 / 351 LEDs</div>
+    </header>
+    <main>
+      <aside>
+        <nav class="tabs" id="tabs">
+          <button data-tab="layout" class="active">Layout</button
+          ><button data-tab="image">Image</button
+          ><button data-tab="physical">Physical</button
+          ><button data-tab="animation">Animation</button
+          ><button data-tab="compare">Compare</button
+          ><button data-tab="electrical">Electrical</button
+           ><button data-tab="pcb">PCB Estimator</button
+          ><button data-tab="boardshape">Board Shape</button
+          ><button data-tab="export">Export</button>
+        </nav>
+        <section class="pane active" id="layout">
+          <div class="group stack">
+            <h2>Matrix configuration</h2>
+            <div class="buttons">
+              <button data-preset="16,16">16 × 16</button
+              ><button data-preset="18,18">18 × 18</button
+              ><button data-preset="19,18">19 × 18</button
+              ><button data-preset="13,27">13 × 27</button><button data-preset="21,21">21 × 21 circle</button><button data-preset="22,22">22 × 22 circle</button><button data-preset="23,23">23 × 23 circle</button>
+            </div>
+            <div class="grid2">
+              <label
+                >Columns<input
+                  id="cols"
+                  type="number"
+                  min="1"
+                  max="351"
+                  value="16" /></label
+              ><label
+                >Rows<input
+                  id="rows"
+                  type="number"
+                  min="1"
+                  max="351"
+                  value="16"
+              /></label>
+            </div>
+            <button id="applyDims" class="primary">Apply dimensions</button>
+            <div class="help">
+              Custom arrangements can contain absent LED positions. Only
+              installed LEDs consume channels.
+            </div>
+          </div>
+          <div class="group stack">
+            <h2>LED drawing / physical mask</h2>
+            <div class="buttons" id="tools">
+              <button data-tool="light" class="active">Light</button
+              ><button data-tool="off">Off</button
+              ><button data-tool="add">Add LED</button
+              ><button data-tool="remove">Remove LED</button>
+            </div>
+            <div class="help">
+              Off = installed but unlit. Remove = no LED soldered there. Click
+              or drag on preview to edit.
+            </div>
+            <div class="buttons">
+              <button id="clear">Clear light</button
+              ><button id="fill">Fill light</button
+              ><button id="invert">Invert</button
+              ><button id="allLEDs">Install all</button
+              ><button id="circle">Circular mask</button>
+            </div>
+            <label
+              >Paint brightness <output id="paintValue">100%</output
+              ><input
+                id="paint"
+                type="range"
+                min="0"
+                max="100"
+                value="100" /></label
+            ><label
+              >LED colour<input
+                id="color"
+                type="color"
+                value="#ffbc65" /></label
+            ><label
+              >Visible light diameter (mm)<input
+                id="diam"
+                type="range"
+                min="0.4"
+                max="8"
+                step="0.1"
+                value="2" /></label
+            ><label
+              >LED pitch (mm)<input
+                id="pitch"
+                type="range"
+                min="1"
+                max="10"
+                step="0.1"
+                value="5"
+            /></label>
+          </div>
+        </section>
+        <section class="pane" id="image">
+          <div class="group stack">
+            <h2>Image → LED conversion</h2>
+            <label
+              >Upload image (PNG/JPEG)<input
+                type="file"
+                id="imageFile"
+                accept="image/png,image/jpeg"
+            /></label>
+            <div class="help">
+              Brightness is sampled into the physical LED positions. This is a
+              preview, not LED colour calibration.
+            </div>
+            <label
+              >Image brightness<input
+                id="imgBrightness"
+                type="range"
+                min="0"
+                max="200"
+                value="100" /></label
+            ><label
+              >Contrast<input
+                id="contrast"
+                type="range"
+                min="0"
+                max="200"
+                value="100" /></label
+            ><label
+              >Threshold<input
+                id="threshold"
+                type="range"
+                min="0"
+                max="255"
+                value="110" /></label
+            ><label
+              >Conversion<select id="conversion">
+                <option value="grey">Greyscale</option>
+                <option value="binary">1-bit threshold</option>
+                <option value="bayer">Ordered dithering</option>
+              </select></label
+            ><label
+              >Zoom<input id="zoom" type="range" min="50" max="250" value="100"
+            /></label>
+            <div class="grid2">
+              <label
+                >Move X (%)<input
+                  id="offsetX"
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value="0" /></label
+              ><label
+                >Move Y (%)<input
+                  id="offsetY"
+                  type="range"
+                  min="-100"
+                  max="100"
+                  value="0"
+              /></label>
+            </div>
+            <button id="bakeImage" class="primary">
+              Bake image into paint pattern</button
+            ><button id="removeImage">Remove image</button>
+          </div>
+        </section>
+        <section class="pane" id="physical">
+          <div class="group stack">
+            <h2>Physical PCB planning</h2>
+            <div class="grid2">
+              <label
+                >Available width (mm)<input
+                  id="areaW"
+                  type="number"
+                  min="1"
+                  value="90" /></label
+              ><label
+                >Available height (mm)<input
+                  id="areaH"
+                  type="number"
+                  min="1"
+                  value="90" /></label
+              ><label
+                >Package width (mm)<input
+                  id="pkgW"
+                  type="number"
+                  min="0.1"
+                  value="2" /></label
+              ><label
+                >Package height (mm)<input
+                  id="pkgH"
+                  type="number"
+                  min="0.1"
+                  value="1.25"
+              /></label>
+            </div>
+            <label
+              >Edge margin each side (mm)<input
+                id="margin"
+                type="number"
+                min="0"
+                step="0.1"
+                value="2" /></label
+            ><button id="fitPitch" class="primary">
+              Use maximum pitch that fits
+            </button>
+            <div id="physicalReadout" class="notice"></div>
+            <div class="help">
+              Calculated dimensions include outer LED package and selected
+              margins, not the entire board, routed traces or keep-outs.
+            </div>
+          </div>
+        </section>
+        <section class="pane" id="animation">
+          <div class="group stack">
+            <h2>Display animation</h2>
+            <label
+              >Mode<select id="animationMode">
+                <option value="static">Static / painted</option>
+                <option value="wave">Wave</option>
+                <option value="checker">Checkerboard</option>
+                <option value="pulse">Pulse</option>
+                <option value="shape">Moving dot</option>
+                <option value="text">Scrolling text</option>
+              </select></label
+            ><label
+              >Scrolling text<input id="scrollText" value="HELLO V2"
+            /></label>
+            <div class="help">
+              Animations temporarily change the preview; your saved paint
+              pattern is preserved.
+            </div>
+          </div>
+        </section>
+        <section class="pane" id="compare">
+          <div class="group stack">
+            <h2>Side-by-side design comparison</h2>
+            <p class="help">Import the <b>project JSON</b> files saved from Export. Each design keeps its own LED mask, pitch, mapping and PCB estimator settings. Importing here <b>does not overwrite</b> your working design.</p>
+            <label>Design A — saved project JSON
+              <input id="compareFileA" type="file" accept=".json,application/json" />
+            </label>
+            <div class="buttons"><button id="compareCurrentA">Use current design as A</button><button id="compareClearA">Clear A</button></div>
+            <div id="compareStatusA" class="compare-file-status">A: current working design</div>
+            <label>Design B — saved project JSON
+              <input id="compareFileB" type="file" accept=".json,application/json" />
+            </label>
+            <div class="buttons"><button id="compareClearB">Clear B</button></div>
+            <div id="compareStatusB" class="compare-file-status">B: manual grid below (until imported)</div>
+            <h3>Manual B grid (optional)</h3>
+            <div class="grid2">
+              <label
+                >B columns<input
+                  id="bCols"
+                  type="number"
+                  min="1"
+                  value="18" /></label
+              ><label
+                >B rows<input id="bRows" type="number" min="1" value="18"
+              /></label>
+            </div>
+            <button id="applyCompare" class="primary">Compare with B</button>
+            <p class="help">
+              Imported designs are drawn at the same physical scale. Amber dots indicate installed LEDs, even if their saved brightness is zero. Routing figures are simplified two-layer proxies, not verified routes.
+            </p>
+          </div>
+        </section>
+        <section class="pane" id="electrical">
+          <div class="group stack">
+            <h2>CS / SW channel assignment</h2>
+            <p class="help">
+              Every installed LED needs a unique pair: CS1–39 and SW1–9. This
+              does not check KiCad routing.
+            </p>
+            <label
+              >Mapping strategy<select id="strategy">
+                <option value="row">Row-major sequential</option>
+                <option value="col">Column-major</option>
+                <option value="snake">Serpentine rows</option>
+                <option value="group">Physical row groups (if feasible)</option>
+              </select></label
+            ><button id="generate" class="primary">Generate mapping</button>
+            <div id="mappingStatus" class="notice"></div>
+            <label>Select installed LED<select id="selectLed"></select></label>
+            <div class="grid2">
+              <label
+                >CS<input id="editCs" type="number" min="1" max="39" /></label
+              ><label
+                >SW<input id="editSw" type="number" min="1" max="9"
+              /></label>
+            </div>
+            <div class="buttons">
+              <button id="assign">Apply assignment</button
+              ><button id="unassign">Unassign</button>
+            </div>
+            <div class="scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Position</th>
+                    <th>CS</th>
+                    <th>SW</th>
+                  </tr>
+                </thead>
+                <tbody id="mapTable"></tbody>
+              </table>
+            </div>
+            <button id="mappingCsv">Download mapping CSV</button
+            ><label
+              >Import mapping CSV<input
+                id="importCsv"
+                type="file"
+                accept=".csv,text/csv"
+            /></label>
+          </div>
+        </section>
+
+        <section class="pane" id="pcb">
+          <div class="group stack">
+            <h2>Two-layer PCB size estimator</h2>
+            <p class="help">Planning tool, not an autorouter. Uses your installed LED mask and CS/SW assignments. Green does not mean the PCB is manufacturable.</p>
+            <div class="grid2">
+              <label>LED footprint width (mm)<input id="pcbFootW" type="number" min="0.1" step="0.05" value="2" /></label>
+              <label>LED footprint height (mm)<input id="pcbFootH" type="number" min="0.1" step="0.05" value="1.25" /></label>
+              <label>Trace width (mm)<input id="pcbTrace" type="number" min="0.05" step="0.025" value="0.15" /></label>
+              <label>Clearance (mm)<input id="pcbClear" type="number" min="0.05" step="0.025" value="0.15" /></label>
+              <label>Via diameter (mm)<input id="pcbVia" type="number" min="0.2" step="0.05" value="0.6" /></label>
+              <label>Matrix edge margin (mm)<input id="pcbMargin" type="number" min="0" step="0.5" value="3" /></label>
+              <label>Controller neck width (mm)<input id="pcbNeckW" type="number" min="1" step="1" value="25" /></label>
+              <label>Controller neck height (mm)<input id="pcbNeckH" type="number" min="0" step="1" value="25" /></label>
+            </div>
+            <label>Net allocation across two copper layers
+              <select id="pcbLayerMode">
+                <option value="split">CS on F.Cu / SW on B.Cu (optimistic)</option>
+                <option value="reverse">SW on F.Cu / CS on B.Cu (optimistic)</option>
+              </select>
+            </label>
+            <p class="help">Uses the footprint's bounding rectangle as a keep-out approximation, and treats the controller neck as a simple T-shaped extension. It does not model real pad geometry, via escape, or the driver's footprint.</p>
+            <div class="buttons">
+              <button id="pcbEvaluate" class="primary">Evaluate current design</button>
+              <button id="pcbSuggest">Find candidate pitch</button>
+              <button id="pcbExport">Export proposal CSV</button>
+            </div>
+          </div>
+          <div class="group stack">
+            <h2>Board envelope & routing indicators</h2>
+            <div id="pcbSummary" class="pcb-summary"></div>
+            <div id="pcbWarnings" class="help"></div>
+            <h3>Estimated net-congestion map</h3>
+            <label>Display
+              <select id="pcbHeatMode"><option value="both">Combined worst layer</option><option value="cs">CS (current sinks)</option><option value="sw">SW (switches)</option></select>
+            </label>
+            <canvas id="pcbHeat" class="pcb-heat" width="640" height="420"></canvas>
+            <div class="help">Lines show abstract net demand between LED positions, NOT actual copper tracks. Colours compare estimated demand against the theoretical per-layer corridor capacity. Net paths are approximate Manhattan trees.</div>
+          </div>
+          <div class="group stack">
+            <h2>Candidate layouts at current pitch</h2>
+            <div class="scroll"><table><thead><tr><th>Grid</th><th>LEDs</th><th>Array envelope</th><th>2-layer indicator</th></tr></thead><tbody id="pcbCandidates"></tbody></table></div>
+            <p class="help">Candidate layouts use the current pitch, footprint, rules and a fresh sequential CS/SW assignment. They are reference cases, not saved designs.</p>
+          </div>
+        </section>
+
+        <section class="pane" id="boardshape">
+          <div class="group stack">
+            <h2>Automatic board outline generator</h2>
+            <p class="help">
+              Shape follows <b>installed</b> LEDs (not LEDs that are turned on).
+              A controller extension and magnetic connector land always remain
+              at the <b>bottom</b> of the board.
+            </p>
+            <label>Outline strategy
+              <select id="shapeMode">
+                <option value="auto">Auto — balance size and routing space</option>
+                <option value="rectangle">Rectangular matrix + bottom tab</option>
+                <option value="balanced">Smooth stepped outline + bottom tab</option>
+                <option value="compact">Tight stepped outline + bottom tab</option>
+              </select>
+            </label>
+            <label>Prioritise easy routing over board area
+              <input id="shapePriority" type="range" min="0" max="100" step="5" value="75" />
+              <span class="help" id="shapePriorityLabel">75% routing preference</span>
+            </label>
+            <div class="grid2">
+              <label>Extra perimeter routing room (mm)
+                <input id="shapeBuffer" type="number" min="0" max="20" step="0.5" value="2" />
+              </label>
+              <label>Min structural web width (mm)
+                <input id="shapeMinWeb" type="number" min="3" max="80" step="1" value="14" />
+              </label>
+              <label>Controller area width (mm)
+                <input id="shapeControllerW" type="number" min="8" max="100" step="1" value="26" />
+              </label>
+              <label>Controller extension height (mm)
+                <input id="shapeExtensionH" type="number" min="8" max="100" step="1" value="29" />
+              </label>
+              <label>Magnetic connector width (mm)
+                <input id="shapeConnectorW" type="number" min="2" max="80" step="0.5" value="14" />
+              </label>
+              <label>Connector depth (mm)
+                <input id="shapeConnectorD" type="number" min="1" max="40" step="0.5" value="6" />
+              </label>
+              <label>Connector bottom inset (mm)
+                <input id="shapeConnectorInset" type="number" min="0" max="20" step="0.5" value="2" />
+              </label>
+              <label>Connector sideways alignment
+                <select id="shapeAlign">
+                  <option value="center">Centre</option>
+                  <option value="left">Left of matrix</option>
+                  <option value="right">Right of matrix</option>
+                </select>
+              </label>
+            </div>
+            <div class="buttons">
+              <button class="primary" id="shapeGenerate">Generate recommended board</button>
+              <button id="shapeRouting">Show routing estimate</button>
+            </div>
+            <div class="outline-note">
+              Values above are <b>provisional</b>. Enter the actual magnetic
+              connector and U1-area dimensions before considering fabrication.
+              The generator uses the trace/via rules from PCB Estimator.
+            </div>
+          </div>
+          <div class="group stack">
+            <h2>Board outline preview</h2>
+            <canvas id="shapeCanvas" class="outline-canvas" width="780" height="600"></canvas>
+            <div class="help">
+              Amber = installed LED locations · cyan = board edge · purple =
+              controller space · blue = magnetic connector landing zone.
+              This is a geometric proposal, <b>not routed copper</b>.
+            </div>
+            <div id="shapeStats" class="outline-results"></div>
+            <div id="shapeWarning" class="outline-note warn"></div>
+          </div>
+          <div class="group stack">
+            <h2>Candidate outline comparison</h2>
+            <div class="scroll" style="max-height:260px">
+              <table class="outline-choices">
+                <thead><tr><th>Shape</th><th>Area</th><th>Bends</th><th>Vs rectangle</th></tr></thead>
+                <tbody id="shapeOptions"></tbody>
+              </table>
+            </div>
+            <h2>Export proposed outline</h2>
+            <div class="buttons">
+              <button id="shapeSvg" class="primary">SVG board outline</button>
+              <button id="shapeCsv">Outline vertices CSV</button>
+              <button id="shapePng">Preview PNG</button>
+            </div>
+            <p class="help">
+              Outline is exported in millimetres with origin at its top-left.
+              SVG/CSV are design guides. Verify Edge.Cuts, mechanical clearance,
+              connector footprint, fab minimum features and DRC in KiCad.
+            </p>
+          </div>
+        </section>
+        <section class="pane" id="export">
+          <div class="group stack">
+            <h2>Save & export</h2>
+            <button id="saveProject" class="primary">
+              Download project JSON</button
+            ><label
+              >Load saved project<input
+                id="loadProject"
+                type="file"
+                accept=".json,application/json" /></label
+            ><button id="patternCsv">Download pattern CSV</button
+            ><button id="placementCsv">Download KiCad placement CSV</button
+            ><button id="exportPng">Download preview PNG</button>
+            <p class="help">
+              CSV references (D1…) are provisional and relative coordinates
+              start at LED centre (0,0). Match references with your schematic
+              before importing into KiCad.
+            </p>
+          </div>
+        </section>
+      </aside>
+      <section class="workspace">
+        <div class="toolbar">
+          <button id="play">Pause</button
+          ><label
+            >Speed<input
+              id="speed"
+              type="range"
+              min="0.2"
+              max="5"
+              step="0.1"
+              value="1.5" /></label
+          ><label
+            >Master brightness<input
+              id="master"
+              type="range"
+              min="0"
+              max="100"
+              value="100" /></label
+          ><button id="engineering" class="active">Engineering</button
+          ><button id="product">Product</button
+          ><label
+            >Glow<input
+              id="glow"
+              type="range"
+              min="0"
+              max="100"
+              value="40" /></label
+          ><label
+            >Blur<input
+              id="blur"
+              type="range"
+              min="0"
+              max="100"
+              value="32" /></label
+          ><label
+            >Diffusion<input
+              id="diffuse"
+              type="range"
+              min="0"
+              max="100"
+              value="35"
+          /></label>
+        </div>
+        <div class="stage"><canvas id="preview"></canvas></div>
+        <div class="metrics">
+          <div class="metric">
+            <b id="mInstalled">256</b><small>Installed LEDs</small>
+          </div>
+          <div class="metric">
+            <b id="mActive">0</b><small>Illuminated LEDs</small>
+          </div>
+          <div class="metric">
+            <b id="mFree">95</b><small>Unused channels</small>
+          </div>
+          <div class="metric">
+            <b id="mPitch">5 mm</b><small>Centre pitch</small>
+          </div>
+        </div>
+        <div id="comparison">
+          <div class="compare">
+            <b id="compareTitleA">Layout A · current design</b><canvas id="compareA"></canvas>
+            <div id="compareInfoA" class="sr"></div>
+          </div>
+          <div class="compare">
+            <b id="compareTitleB">Layout B · manual grid</b><canvas id="compareB"></canvas>
+            <div id="compareInfoB" class="sr"></div>
+          </div>
+        </div>
+        <div id="compareSummary" class="compare-summary group" style="display:none"></div>
+        <div id="compareExportRow" class="buttons" style="display:none;margin-top:12px"><button id="compareExportPng" class="primary">Download comparison PNG</button></div>
+        <p class="footnote">
+          Visual and geometric approximation only. Manufacturing clearance, PCB
+          routing, electrical limits and real diffuser performance must be
+          verified separately.
+        </p>
+      </section>
+    </main>
+    <script>
+      "use strict";
+      const MAX = 351,
+        CS_MAX = 39,
+        SW_MAX = 9,
+        $ = (id) => document.getElementById(id);
+      const state = {
+        cols: 16,
+        rows: 16,
+        pitch: 5,
+        color: "#ffbc65",
+        view: "engineering",
+        tool: "light",
+        painting: false,
+        playing: true,
+        time: 0,
+        mode: "static",
+        present: [],
+        light: [],
+        map: {},
+        image: null,
+        tab: "layout",
+        bCols: 18,
+        bRows: 18,
+      };
+      const compareSaved = {A:null, B:null};
+      function key(r, c) {
+        return `${r},${c}`;
+      }
+      // A grid can have more than 351 *positions*, but never more than
+      // 351 physically installed LEDs. When a mask is too large, keep the
+      // positions closest to the centre, removing outer positions first.
+      const MAX_GRID_SIDE = 60;
+      function circularMask(cols, rows) {
+        const positions = [];
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+          const dx = (c - (cols - 1) / 2) / (cols / 2);
+          const dy = (r - (rows - 1) / 2) / (rows / 2);
+          const d = Math.hypot(dx, dy);
+          if (d <= 0.95) positions.push({i:r*cols+c, d, r, c});
+        }
+        // Stable centre-first order; symmetric ties are deterministic.
+        positions.sort((a,b)=>a.d-b.d || a.r-b.r || a.c-b.c);
+        const mask = Array(cols*rows).fill(false);
+        for (const p of positions.slice(0,MAX)) mask[p.i] = true;
+        return mask;
+      }
+      function applyCircleMask() {
+        state.present = circularMask(state.cols, state.rows);
+        state.light = state.light.map((v,i)=>state.present[i]?v:0);
+        state.map = {}; // Physical LED positions changed: regenerate mapping.
+        refresh();
+      }
+      function initGrid(cols, rows) {
+        const old = { ...state, present: state.present, light: state.light };
+        state.cols = cols;
+        state.rows = rows;
+        state.present = Array(cols * rows).fill(true);
+        state.light = Array(cols * rows).fill(0);
+        for (let r = 0; r < Math.min(rows, old.rows); r++)
+          for (let c = 0; c < Math.min(cols, old.cols); c++) {
+            const to = r * cols + c,
+              from = r * old.cols + c;
+            state.present[to] = old.present[from] ?? true;
+            state.light[to] = old.light[from] ?? 0;
+          }
+        if (cols * rows > MAX) {
+          state.present = circularMask(cols, rows);
+          state.light = state.light.map((v,i)=>state.present[i]?v:0);
+        }
+        const updated = {};
+        for (const [k, v] of Object.entries(state.map)) {
+          let [r, c] = k.split(",").map(Number);
+          if (r < rows && c < cols && state.present[r * cols + c])
+            updated[k] = v;
+        }
+        state.map = updated;
+        refresh();
+      }
+      function installed() {
+        const result = [];
+        for (let r = 0; r < state.rows; r++)
+          for (let c = 0; c < state.cols; c++)
+            if (state.present[r * state.cols + c])
+              result.push({ r, c, k: key(r, c) });
+        return result;
+      }
+      function count() {
+        return state.present.filter(Boolean).length;
+      }
+      function clamp(v, a, b) {
+        return Math.min(b, Math.max(a, v));
+      }
+      function setting(id) {
+        return Number($(id).value);
+      }
+      function download(name, data, type = "text/plain") {
+        const blob = data instanceof Blob ? data : new Blob([data], { type });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+      }
+      function setTab(tab) {
+        state.tab = tab;
+        document
+          .querySelectorAll(".pane")
+          .forEach((el) => el.classList.toggle("active", el.id === tab));
+        document.querySelectorAll("[data-tab]").forEach((el) => {
+          if (el.tagName === "BUTTON")
+            el.classList.toggle("active", el.dataset.tab === tab);
+        });
+        $("comparison").classList.toggle("show", tab === "compare");
+        refresh();
+      }
+      function mappingValidation() {
+        const used = new Set();
+        let duplicates = 0,
+          missing = 0,
+          invalid = 0;
+        for (const p of installed()) {
+          const a = state.map[p.k];
+          if (!a) {
+            missing++;
+            continue;
+          }
+          if (
+            !Number.isInteger(a.cs) ||
+            !Number.isInteger(a.sw) ||
+            a.cs < 1 ||
+            a.cs > 39 ||
+            a.sw < 1 ||
+            a.sw > 9
+          ) {
+            invalid++;
+            continue;
+          }
+          const pair = `${a.cs}-${a.sw}`;
+          if (used.has(pair)) duplicates++;
+          used.add(pair);
+        }
+        return {
+          duplicates,
+          missing,
+          invalid,
+          used: used.size,
+          good: !duplicates && !missing && !invalid && count() <= 351,
+        };
+      }
+      function generateMapping() {
+        const order = installed(),
+          strategy = $("strategy").value;
+        if (order.length > MAX) {
+          alert("Remove LEDs until 351 or fewer are installed before generating a mapping.");
+          return;
+        }
+        const map = {};
+        if (strategy === "col") order.sort((a, b) => a.c - b.c || a.r - b.r);
+        if (strategy === "snake")
+          order.sort((a, b) => a.r - b.r || (a.r % 2 ? b.c - a.c : a.c - b.c));
+        if (strategy === "group") {
+          const groups = Array.from({ length: 9 }, () => []);
+          order.forEach((p) => groups[p.r % 9].push(p));
+          if (groups.some((g) => g.length > 39)) {
+            alert(
+              "Physical row grouping exceeds 39 CS on at least one SW. Try another mapping."
+            );
+            return;
+          }
+          groups.forEach((g, sw) =>
+            g.forEach((p, cs) => {
+              map[p.k] = { cs: cs + 1, sw: sw + 1 };
+            })
+          );
+        } else
+          order.forEach(
+            (p, i) =>
+              (map[p.k] = { cs: (i % 39) + 1, sw: Math.floor(i / 39) + 1 })
+          );
+        state.map = map;
+        refresh();
+      }
+      function refreshMapping() {
+        const v = mappingValidation();
+        $("mappingStatus").className = "notice " + (v.good ? "good" : "bad");
+        $("mappingStatus").textContent = `${
+          v.good ? "Valid mapping" : "Needs attention"
+        } · ${v.used} unique channels · ${351 - v.used} unused · ${
+          v.missing
+        } missing · ${v.duplicates} duplicates · ${v.invalid} invalid`;
+        const select = $("selectLed"),
+          prev = select.value;
+        select.replaceChildren();
+        for (const p of installed()) {
+          const opt = document.createElement("option");
+          opt.value = p.k;
+          opt.textContent = `Row ${p.r + 1}, Col ${p.c + 1}`;
+          select.append(opt);
+        }
+        if (state.map[prev]) select.value = prev;
+        showSelected();
+        $("mapTable").innerHTML = installed()
+          .map((p) => {
+            const a = state.map[p.k];
+            return `<tr><td>R${p.r + 1} C${p.c + 1}</td><td>${
+              a?.cs ?? "—"
+            }</td><td>${a?.sw ?? "—"}</td></tr>`;
+          })
+          .join("");
+      }
+      function showSelected() {
+        const a = state.map[$("selectLed").value];
+        $("editCs").value = a?.cs ?? "";
+        $("editSw").value = a?.sw ?? "";
+      }
+      function physical() {
+        const pkgW = setting("pkgW"),
+          pkgH = setting("pkgH"),
+          margin = setting("margin"),
+          pw = setting("areaW"),
+          ph = setting("areaH");
+        const width = (state.cols - 1) * state.pitch + pkgW + 2 * margin,
+          height = (state.rows - 1) * state.pitch + pkgH + 2 * margin;
+        const fit = width <= pw && height <= ph;
+        const overlap = state.pitch < Math.max(pkgW, pkgH);
+        $("physicalReadout").innerHTML = `<b>${width.toFixed(
+          1
+        )} × ${height.toFixed(1)} mm</b> occupied area<br><span class="${
+          fit && !overlap ? "good" : "bad"
+        }">${fit ? "Fits specified area" : "Exceeds specified area"}${
+          overlap ? " · LED packages overlap" : ""
+        }</span><br>Centre span: ${((state.cols - 1) * state.pitch).toFixed(
+          1
+        )} × ${((state.rows - 1) * state.pitch).toFixed(1)} mm`;
+      }
+      function imageBrightness(cols, rows) {
+        if (!state.image) return null;
+        const img = state.image,
+          cv = document.createElement("canvas");
+        cv.width = cols;
+        cv.height = rows;
+        const ctx = cv.getContext("2d", { willReadFrequently: true });
+        const zoom = setting("zoom") / 100;
+        const ratio = Math.max(cols / img.width, rows / img.height) * zoom;
+        const w = img.width * ratio,
+          h = img.height * ratio;
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, cols, rows);
+        ctx.drawImage(
+          img,
+          (cols - w) / 2 + (setting("offsetX") / 100) * cols,
+          (rows - h) / 2 + (setting("offsetY") / 100) * rows,
+          w,
+          h
+        );
+        const data = ctx.getImageData(0, 0, cols, rows).data,
+          result = [];
+        const bright = setting("imgBrightness") / 100,
+          contrast = setting("contrast") / 100,
+          threshold = setting("threshold");
+        const bayer = [
+          [0, 8, 2, 10],
+          [12, 4, 14, 6],
+          [3, 11, 1, 9],
+          [15, 7, 13, 5],
+        ];
+        for (let i = 0; i < cols * rows; i++) {
+          let j = i * 4,
+            luma =
+              (0.2126 * data[j] + 0.7152 * data[j + 1] + 0.0722 * data[j + 2]) *
+              bright;
+          luma = clamp((luma - 128) * contrast + 128, 0, 255);
+          const mode = $("conversion").value;
+          if (mode === "binary") luma = luma >= threshold ? 255 : 0;
+          if (mode === "bayer")
+            luma =
+              luma >=
+              (bayer[Math.floor(i / cols) % 4][(i % cols) % 4] + 0.5) * 16
+                ? 255
+                : 0;
+          result.push(luma / 255);
+        }
+        return result;
+      }
+      const font = {
+        A: ["010", "101", "111", "101", "101"],
+        B: ["110", "101", "110", "101", "110"],
+        C: ["011", "100", "100", "100", "011"],
+        D: ["110", "101", "101", "101", "110"],
+        E: ["111", "100", "110", "100", "111"],
+        F: ["111", "100", "110", "100", "100"],
+        G: ["011", "100", "101", "101", "011"],
+        H: ["101", "101", "111", "101", "101"],
+        I: ["111", "010", "010", "010", "111"],
+        J: ["011", "001", "001", "101", "010"],
+        K: ["101", "101", "110", "101", "101"],
+        L: ["100", "100", "100", "100", "111"],
+        M: ["101", "111", "111", "101", "101"],
+        N: ["101", "111", "111", "111", "101"],
+        O: ["010", "101", "101", "101", "010"],
+        P: ["110", "101", "110", "100", "100"],
+        Q: ["010", "101", "101", "111", "011"],
+        R: ["110", "101", "110", "101", "101"],
+        S: ["011", "100", "010", "001", "110"],
+        T: ["111", "010", "010", "010", "010"],
+        U: ["101", "101", "101", "101", "111"],
+        V: ["101", "101", "101", "101", "010"],
+        W: ["101", "101", "111", "111", "101"],
+        X: ["101", "101", "010", "101", "101"],
+        Y: ["101", "101", "010", "010", "010"],
+        Z: ["111", "001", "010", "100", "111"],
+        " ": ["000", "000", "000", "000", "000"],
+      };
+      function animationValue(c, r, cols, rows, t) {
+        const mode = $("animationMode").value;
+        const speed = setting("speed");
+        if (mode === "wave")
+          return 0.5 + 0.5 * Math.sin((c + r) * 0.6 - t * speed * 3);
+        if (mode === "checker")
+          return (c + r + Math.floor(t * speed * 2)) % 2 ? 1 : 0.04;
+        if (mode === "pulse") return 0.5 + 0.5 * Math.sin(t * speed * 3);
+        if (mode === "shape")
+          return Math.hypot(
+            c - (cols - 1) * (0.5 + 0.44 * Math.sin(t * speed)),
+            r - (rows - 1) * (0.5 + 0.44 * Math.cos(t * speed))
+          ) < 1.8
+            ? 1
+            : 0;
+        if (mode === "text") {
+          const txt = $("scrollText").value.toUpperCase() || " ",
+            span = txt.length * 4;
+          const x =
+            c + (Math.floor(t * speed * 4) % Math.max(1, span + cols)) - cols;
+          const ci = Math.floor(x / 4),
+            cx = x % 4;
+          return ci >= 0 &&
+            ci < txt.length &&
+            cx >= 0 &&
+            cx < 3 &&
+            r >= Math.floor(rows / 2) - 2 &&
+            r < Math.floor(rows / 2) + 3 &&
+            (font[txt[ci]] || font[" "])[r - (Math.floor(rows / 2) - 2)][cx] ===
+              "1"
+            ? 1
+            : 0;
+        }
+        return 0;
+      }
+      function levels(cols, rows, forA) {
+        const image = imageBrightness(cols, rows);
+        const v = [];
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++) {
+            let level = forA ? state.light[r * cols + c] || 0 : 0;
+            if (image) level = image[r * cols + c];
+            if ($("animationMode").value !== "static")
+              level = animationValue(c, r, cols, rows, state.time);
+            v.push(level);
+          }
+        return v;
+      }
+      function render(canvas, cols, rows, mask, values) {
+        const rect = canvas.getBoundingClientRect(),
+          dpr = Math.min(devicePixelRatio || 1, 2);
+        canvas.width = Math.max(300, Math.round(rect.width * dpr));
+        canvas.height = Math.max(200, Math.round(rect.height * dpr));
+        const ctx = canvas.getContext("2d");
+        const W = canvas.width,
+          H = canvas.height;
+        ctx.fillStyle = "#0d1522";
+        ctx.fillRect(0, 0, W, H);
+        const spanX = Math.max(1, (cols - 1) * state.pitch),
+          spanY = Math.max(1, (rows - 1) * state.pitch);
+        const scale = Math.min(
+          (W - 80 * dpr) / (spanX + state.pitch),
+          (H - 52 * dpr) / (spanY + state.pitch)
+        );
+        const pitchPx = state.pitch * scale,
+          cx = W / 2 - (spanX * scale) / 2,
+          cy = H / 2 - (spanY * scale) / 2;
+        const rgb = [1, 3, 5].map((i) =>
+            parseInt(state.color.slice(i, i + 2), 16)
+          ),
+          master = setting("master") / 100;
+        let active = 0;
+        for (let r = 0; r < rows; r++)
+          for (let c = 0; c < cols; c++) {
+            const i = r * cols + c;
+            if (!mask[i]) continue;
+            const x = cx + c * pitchPx,
+              y = cy + r * pitchPx,
+              l = clamp(values[i] * master, 0, 1);
+            if (l > 0.01) active++;
+            const radius = clamp(
+              ((setting("diam") / state.pitch) * pitchPx) / 2,
+              1.3 * dpr,
+              pitchPx * 0.48
+            );
+            if (state.view === "product" && l > 0.01) {
+              const glow = setting("glow") / 100,
+                blur = setting("blur") / 100,
+                diff = setting("diffuse") / 100;
+              const rg = ctx.createRadialGradient(
+                x,
+                y,
+                0,
+                x,
+                y,
+                radius * (1.4 + glow * 2 + blur * 3)
+              );
+              rg.addColorStop(
+                0,
+                `rgba(${rgb.join(",")},${Math.min(1, l * (0.85 + diff * 0.2))})`
+              );
+              rg.addColorStop(
+                0.3,
+                `rgba(${rgb.join(",")},${l * (0.5 + glow * 0.2)})`
+              );
+              rg.addColorStop(1, `rgba(${rgb.join(",")},0)`);
+              ctx.fillStyle = rg;
+              ctx.beginPath();
+              ctx.arc(
+                x,
+                y,
+                radius * (1.4 + glow * 2 + blur * 3),
+                0,
+                Math.PI * 2
+              );
+              ctx.fill();
+            }
+            if (state.view === "engineering") {
+              ctx.strokeStyle = "#46566f";
+              ctx.lineWidth = Math.max(0.8 * dpr, 0.6);
+              ctx.strokeRect(
+                x - pitchPx * 0.31,
+                y - pitchPx * 0.24,
+                pitchPx * 0.62,
+                pitchPx * 0.48
+              );
+            }
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${rgb.join(",")},${Math.max(0.12, l)})`;
+            ctx.fill();
+          }
+        if (state.view === "engineering") {
+          ctx.fillStyle = "#9daec4";
+          ctx.font = `${11 * dpr}px system-ui`;
+          ctx.fillText(
+            `${cols} × ${rows} · pitch ${state.pitch.toFixed(1)} mm`,
+            14 * dpr,
+            20 * dpr
+          );
+        }
+        canvas._geometry = { cx, cy, pitchPx, cols, rows };
+        return active;
+      }
+      // Comparison projects are snapshots. Never apply them to `state`.
+      function compareValidate(o) {
+        if (!o || o.format !== "led-matrix-design-studio" ||
+            !Number.isInteger(o.cols) || !Number.isInteger(o.rows) ||
+            o.cols < 1 || o.rows < 1 || o.cols > MAX_GRID_SIDE || o.rows > MAX_GRID_SIDE ||
+            !Array.isArray(o.present) || !Array.isArray(o.light) ||
+            o.present.length !== o.cols * o.rows || o.light.length !== o.cols * o.rows ||
+            o.present.some(v=>typeof v !== "boolean") ||
+            o.present.filter(Boolean).length > MAX ||
+            !Number.isFinite(Number(o.pitch)) || Number(o.pitch) <= 0 || Number(o.pitch) > 100)
+          throw Error("Not a valid LED Matrix Design Studio project JSON");
+        return {
+          cols:o.cols,rows:o.rows,pitch:Number(o.pitch),
+          present:o.present.slice(),light:o.light.map(v=>clamp(Number(v)||0,0,1)),
+          map:o.map && typeof o.map === "object" ? o.map : {},
+          color:typeof o.color === "string" && /^#[0-9a-f]{6}$/i.test(o.color) ? o.color : "#ffbc65",
+          pcb:o.pcb && typeof o.pcb === "object" ? {...o.pcb} : null,
+          shape:o.shape && typeof o.shape === "object" ? {...o.shape} : null,
+        };
+      }
+      function compareCurrentSnapshot() {
+        return {cols:state.cols,rows:state.rows,pitch:state.pitch,
+          present:state.present.slice(),light:state.light.slice(),map:structuredClone(state.map),
+          color:state.color,pcb:Object.fromEntries(PCB_IDS.map(id=>[id,$(id).value])),
+          shape:Object.fromEntries(SHAPE_IDS.map(id=>[id,$(id).value]))};
+      }
+      function compareManualSnapshot() {
+        const cols=state.bCols,rows=state.bRows;
+        return {cols,rows,pitch:state.pitch,present:Array(cols*rows).fill(true),
+          light:Array(cols*rows).fill(1),map:{},color:state.color,pcb:null,shape:null,manual:true};
+      }
+      function compareSnapshot(slot) {
+        return compareSaved[slot]?.project || (slot==="A"?compareCurrentSnapshot():compareManualSnapshot());
+      }
+      function comparePositions(d) {
+        const a=[];
+        for(let r=0;r<d.rows;r++)for(let c=0;c<d.cols;c++)
+          if(d.present[r*d.cols+c])a.push({r,c,k:key(r,c)});
+        return a;
+      }
+      function comparePcbSettings(d) {
+        const defaults=pcbSettings();
+        if(!defaults)return null;
+        const ids={footW:"pcbFootW",footH:"pcbFootH",trace:"pcbTrace",clear:"pcbClear",
+          via:"pcbVia",margin:"pcbMargin",neckW:"pcbNeckW",neckH:"pcbNeckH"};
+        const p={...defaults};
+        if(d.pcb)for(const [name,id] of Object.entries(ids))
+          if(d.pcb[id] !== undefined)p[name]=Number(d.pcb[id]);
+        return Object.values(ids).every((id)=>Number.isFinite(Number(d.pcb?.[id]??$(id).value))) ? p : null;
+      }
+      function compareMetrics(d) {
+        const positions=comparePositions(d), p=comparePcbSettings(d);
+        const used=new Set(), all=new Set();let invalid=0,missing=0,duplicates=0;
+        for(const pos of positions){
+          const a=d.map[pos.k];
+          if(!a){missing++;continue;}
+          if(!Number.isInteger(a.cs)||!Number.isInteger(a.sw)||a.cs<1||a.cs>39||a.sw<1||a.sw>9){invalid++;continue;}
+          const k=`${a.cs},${a.sw}`;if(used.has(k))duplicates++;used.add(k);
+          all.add(a.cs);
+        }
+        const mapped=missing===0&&invalid===0&&duplicates===0;
+        const e=p?pcbEvaluate(positions,d.map,d.cols,d.rows,d.pitch,p):null;
+        return {positions,leds:positions.length,mapped,missing,invalid,duplicates,e};
+      }
+      function compareDrawCanvas(cv,d,sharedScale) {
+        const rect=cv.getBoundingClientRect();
+        const dpr=Math.min(window.devicePixelRatio||1,2);
+        cv.width=Math.max(300,Math.round(rect.width*dpr));
+        cv.height=Math.max(200,Math.round(rect.height*dpr));
+        const ctx=cv.getContext("2d"),W=cv.width,H=cv.height;
+        ctx.fillStyle="#0d1522";ctx.fillRect(0,0,W,H);
+        const xSpan=(d.cols-1)*d.pitch,ySpan=(d.rows-1)*d.pitch;
+        const x0=(W-xSpan*sharedScale)/2,y0=(H-ySpan*sharedScale)/2;
+        const rgb=[1,3,5].map(i=>parseInt(d.color.slice(i,i+2),16));
+        const rad=Math.max(1.5*dpr,Math.min(d.pitch*sharedScale*.18,5*dpr));
+        for(let r=0;r<d.rows;r++)for(let c=0;c<d.cols;c++){
+          if(!d.present[r*d.cols+c])continue;
+          const x=x0+c*d.pitch*sharedScale,y=y0+r*d.pitch*sharedScale;
+          ctx.strokeStyle="#44566f";ctx.lineWidth=Math.max(.7*dpr,1);
+          ctx.strokeRect(x-rad*1.35,y-rad*1.05,rad*2.7,rad*2.1);
+          ctx.fillStyle=`rgb(${rgb.join(",")})`;
+          ctx.beginPath();ctx.arc(x,y,rad*.65,0,2*Math.PI);ctx.fill();
+        }
+        ctx.fillStyle="#aabbd1";ctx.font=`${11*dpr}px system-ui`;
+        ctx.fillText(`${d.cols} × ${d.rows} · ${d.pitch.toFixed(1)} mm pitch`,12*dpr,20*dpr);
+      }
+      function compareDraw() {
+        const a=compareSnapshot("A"),b=compareSnapshot("B");
+        const cvs=[$("compareA"),$("compareB")];
+        const scales=[a,b].map((d,i)=>{
+          const rect=cvs[i].getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+          return Math.min((Math.max(300,rect.width*dpr)-48*dpr)/Math.max(1,d.cols*d.pitch),
+            (Math.max(200,rect.height*dpr)-48*dpr)/Math.max(1,d.rows*d.pitch));
+        });
+        const scale=Math.max(.01,Math.min(...scales));
+        compareDrawCanvas(cvs[0],a,scale);compareDrawCanvas(cvs[1],b,scale);
+        for(const [slot,d] of [["A",a],["B",b]]){
+          const name=compareSaved[slot]?.name || (slot==="A"?"current working design":"manual grid");
+          $("compareTitle"+slot).textContent=`Layout ${slot} · ${name}`;
+          const m=compareMetrics(d);
+          $("compareInfo"+slot).textContent=`${m.leds} LEDs · ${d.pitch.toFixed(1)} mm pitch · ${m.e?`${pcbNumber(m.e.arrayW)} × ${pcbNumber(m.e.arrayH)} mm array envelope`:"—"}`;
+        }
+        compareDrawSummary(a,b);
+      }
+      function compareDrawSummary(a,b) {
+        const ma=compareMetrics(a),mb=compareMetrics(b);
+        const cell=(x)=>x==null?"—":String(x);
+        const fmt=(n,unit="")=>Number.isFinite(n)?n.toFixed(1)+unit:"—";
+        const ratio=(m,k)=>m.mapped&&m.e?pcbRatio(m.e[k]):"Not evaluated";
+        const mapping=(m)=>m.mapped?"Valid":`${m.missing} missing, ${m.duplicates} duplicate, ${m.invalid} invalid`;
+        const rows=[
+          ["Installed LEDs",ma.leds,mb.leds],
+          ["Unused channels",MAX-ma.leds,MAX-mb.leds],
+          ["Grid",`${a.cols} × ${a.rows}`,`${b.cols} × ${b.rows}`],
+          ["Centre pitch",fmt(a.pitch," mm"),fmt(b.pitch," mm")],
+          ["LED array envelope",ma.e?`${fmt(ma.e.arrayW)} × ${fmt(ma.e.arrayH)} mm`:"—",mb.e?`${fmt(mb.e.arrayW)} × ${fmt(mb.e.arrayH)} mm`:"—"],
+          ["T-shaped board bounding box (proxy)",ma.e?`${fmt(ma.e.boardW)} × ${fmt(ma.e.boardH)} mm`:"—",mb.e?`${fmt(mb.e.boardW)} × ${fmt(mb.e.boardH)} mm`:"—"],
+          ["T-shaped PCB area (proxy)",ma.e?fmt(ma.e.boardArea/100," cm²"):"—",mb.e?fmt(mb.e.boardArea/100," cm²"):"—"],
+          ["Mapping",mapping(ma),mapping(mb)],
+          ["Max abstract corridor demand / capacity",ratio(ma,"worstRatio"),ratio(mb,"worstRatio")],
+          ["Controller neck fanout / capacity",ratio(ma,"fanoutRatio"),ratio(mb,"fanoutRatio")],
+          ["Via body fits clear gap",ma.e?(ma.e.viaGap?"Possible":"No"):"—",mb.e?(mb.e.viaGap?"Possible":"No"):"—"],
+          ["2-layer routing proxy",ma.mapped&&ma.e?(ma.e.pass?"No proxy flag":"Review"):"Not evaluated",mb.mapped&&mb.e?(mb.e.pass?"No proxy flag":"Review"):"Not evaluated"],
+        ];
+        const esc=(v)=>String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+        $("compareSummary").style.display="block";
+        $("compareExportRow").style.display="flex";
+        $("compareSummary").innerHTML=`<h2>Design comparison · independent saved settings</h2>
+          <table><thead><tr><th>Parameter</th><th>Design A</th><th>Design B</th></tr></thead><tbody>
+          ${rows.map(([k,v,w])=>`<tr><td>${esc(k)}</td><td>${esc(v)}</td><td>${esc(w)}</td></tr>`).join("")}
+          </tbody></table><p class="help">Both previews use the same millimetre-to-pixel scale. The PCB area and routing indicators are the original estimator's T-shaped proxies, not the generated Board Shape outline. Missing/invalid mappings are not evaluated for routing. This is not an autorouter or thermal analysis.</p>`;
+      }
+      async function compareImport(slot,e) {
+        const file=e.target.files?.[0];if(!file)return;
+        try{
+          if(file.size>10*1024*1024)throw Error("File exceeds 10 MB");
+          const project=compareValidate(JSON.parse(await file.text()));
+          compareSaved[slot]={project,name:file.name};
+          $("compareStatus"+slot).textContent=`${slot}: ${file.name} · ${project.present.filter(Boolean).length} LEDs`;
+          $("compareStatus"+slot).className="compare-file-status ready";
+          setTab("compare");
+        }catch(err){
+          $("compareStatus"+slot).textContent=`${slot}: ${err.message}`;
+          $("compareStatus"+slot).className="compare-file-status error";
+        }
+        e.target.value="";
+      }
+      function compareExportImage() {
+        const a=$("compareA"),b=$("compareB"),w=1100,h=800;
+        const cv=document.createElement("canvas");cv.width=w;cv.height=h;
+        const ctx=cv.getContext("2d");ctx.fillStyle="#0b1220";ctx.fillRect(0,0,w,h);
+        ctx.fillStyle="#edf3fb";ctx.font="bold 27px system-ui";ctx.fillText("LED Matrix · Design Comparison",30,45);
+        ctx.font="16px system-ui";
+        for(const [i,slot,c] of [[0,"A",a],[1,"B",b]]){
+          const x=30+i*550;
+          ctx.fillStyle="#edf3fb";ctx.fillText($("compareTitle"+slot).textContent.slice(0,60),x,83);
+          ctx.drawImage(c,x,102,520,350);
+          ctx.fillStyle="#9db3ce";ctx.fillText($("compareInfo"+slot).textContent,x,475);
+        }
+        const ma=compareMetrics(compareSnapshot("A")),mb=compareMetrics(compareSnapshot("B"));
+        ctx.font="16px system-ui";
+        const metrics=[
+          ["Installed LEDs",ma.leds,mb.leds],
+          ["Pitch (mm)",compareSnapshot("A").pitch,compareSnapshot("B").pitch],
+          ["Board area proxy (cm²)",ma.e?pcbNumber(ma.e.boardArea/100):"—",mb.e?pcbNumber(mb.e.boardArea/100):"—"],
+          ["Corridor demand",ma.mapped&&ma.e?pcbRatio(ma.e.worstRatio):"N/A",mb.mapped&&mb.e?pcbRatio(mb.e.worstRatio):"N/A"],
+          ["Neck demand",ma.mapped&&ma.e?pcbRatio(ma.e.fanoutRatio):"N/A",mb.mapped&&mb.e?pcbRatio(mb.e.fanoutRatio):"N/A"],
+        ];
+        metrics.forEach(([label,va,vb],i)=>{const y=525+i*37;ctx.fillStyle="#a9bdd4";ctx.fillText(label,32,y);ctx.fillStyle="#f3f6fc";ctx.fillText(String(va),550,y);ctx.fillText(String(vb),845,y);});
+        ctx.fillStyle="#91a7c4";ctx.font="13px system-ui";
+        ctx.fillText("Preliminary geometry and routing proxies only · not verified PCB routing or thermal performance",30,770);
+        cv.toBlob(blob=>{if(blob)download("LED_design_comparison.png",blob,"image/png");});
+      }
+      function refresh() {
+        const n = count();
+        $("headCount").textContent = `${n} / 351 LEDs`;
+        $("mInstalled").textContent = n;
+        $("mFree").textContent = Math.max(0, 351 - n);
+        $("mPitch").textContent = `${state.pitch.toFixed(1)} mm`;
+        physical();
+        refreshMapping();
+        pcbUpdate();
+        if (state.tab === "boardshape") shapeUpdate();
+        draw();
+      }
+      function draw() {
+        if (!$("preview").getBoundingClientRect().width) return;
+        const v = levels(state.cols, state.rows, true);
+        $("mActive").textContent = render(
+          $("preview"),
+          state.cols,
+          state.rows,
+          state.present,
+          v
+        );
+        if (state.tab === "compare") compareDraw();
+      }
+      function cellFromEvent(e) {
+        const cv = $("preview"),
+          g = cv._geometry;
+        if (!g) return null;
+        const rect = cv.getBoundingClientRect(),
+          x = ((e.clientX - rect.left) * cv.width) / rect.width,
+          y = ((e.clientY - rect.top) * cv.height) / rect.height;
+        const c = Math.round((x - g.cx) / g.pitchPx),
+          r = Math.round((y - g.cy) / g.pitchPx);
+        return r >= 0 && r < state.rows && c >= 0 && c < state.cols
+          ? { r, c, i: r * state.cols + c }
+          : null;
+      }
+      function paint(e) {
+        const p = cellFromEvent(e);
+        if (!p) return;
+        if (state.tab === "electrical") {
+          const k = key(p.r, p.c);
+          if (state.present[p.i]) {
+            $("selectLed").value = k;
+            showSelected();
+          }
+          return;
+        }
+        if (state.tab !== "layout") return;
+        const tool = e.shiftKey ? "off" : state.tool;
+        if (tool === "remove") {
+          state.present[p.i] = false;
+          state.light[p.i] = 0;
+          delete state.map[key(p.r, p.c)];
+        } else if (tool === "add") {
+          if (!state.present[p.i] && count() >= 351) return;
+          state.present[p.i] = true;
+        } else if (state.present[p.i])
+          state.light[p.i] = tool === "off" ? 0 : setting("paint") / 100;
+        refresh();
+      }
+      function csvRows() {
+        return installed().map((p, i) => ({
+          reference: `D${i + 1}`,
+          row: p.r,
+          col: p.c,
+          x: (p.c * state.pitch).toFixed(3),
+          y: (p.r * state.pitch).toFixed(3),
+          brightness: state.light[p.r * state.cols + p.c],
+          cs: state.map[p.k]?.cs ?? "",
+          sw: state.map[p.k]?.sw ?? "",
+        }));
+      }
+      function rowsCSV(headers, rows) {
+        return [
+          headers.join(","),
+          ...rows.map((row) => headers.map((h) => row[h] ?? "").join(",")),
+        ].join("\n");
+      }
+
+      // PCB ESTIMATOR: geometrical lower bounds + heuristic topology analysis.
+      // Not a trace router. Never treat these estimates as DRC clearance verification.
+      const PCB_IDS = ["pcbFootW", "pcbFootH", "pcbTrace", "pcbClear", "pcbVia", "pcbMargin", "pcbNeckW", "pcbNeckH", "pcbLayerMode"];
+      let lastPCB = null;
+
+      function pcbSettings() {
+        const p = {
+          footW: setting("pcbFootW"), footH: setting("pcbFootH"),
+          trace: setting("pcbTrace"), clear: setting("pcbClear"),
+          via: setting("pcbVia"), margin: setting("pcbMargin"),
+          neckW: setting("pcbNeckW"), neckH: setting("pcbNeckH"),
+          layerMode: $("pcbLayerMode").value,
+        };
+        if (![p.footW,p.footH,p.trace,p.clear,p.via,p.neckW].every(v=>Number.isFinite(v)&&v>0)
+          || ![p.margin,p.neckH].every(v=>Number.isFinite(v)&&v>=0))
+          return null;
+        return p;
+      }
+
+      function pcbCorridorCapacity(gap, trace, clearance) {
+        // Both boundary clearances + N-1 trace-to-trace clearances.
+        return Math.max(0, Math.floor((gap-clearance+1e-9)/(trace+clearance)));
+      }
+
+      function pcbSequentialMap(positions) {
+        const m = {};
+        positions.forEach((p,i)=>m[p.k]={cs:i%39+1,sw:Math.floor(i/39)+1});
+        return m;
+      }
+
+      // Approximate Manhattan MST per net. Each route edge increments a
+      // topological demand counter, rather than claiming physical trace location.
+      function pcbNetDemand(positions, map, cols, rows) {
+        const hCS = Array.from({length:rows},()=>Array(Math.max(0,cols-1)).fill(0));
+        const vCS = Array.from({length:Math.max(0,rows-1)},()=>Array(cols).fill(0));
+        const hSW = Array.from({length:rows},()=>Array(Math.max(0,cols-1)).fill(0));
+        const vSW = Array.from({length:Math.max(0,rows-1)},()=>Array(cols).fill(0));
+        let lengthCS=0,lengthSW=0;
+        const groups = {cs:new Map(),sw:new Map()};
+        for (const p of positions) {
+          const a=map[p.k];
+          if (!a || !Number.isInteger(a.cs) || !Number.isInteger(a.sw) || a.cs<1 || a.cs>39 || a.sw<1 || a.sw>9) continue;
+          for (const t of ["cs","sw"]) {
+            const k=a[t];
+            if(!groups[t].has(k)) groups[t].set(k,[]);
+            groups[t].get(k).push(p);
+          }
+        }
+        for (const t of ["cs","sw"]) {
+          const h=t==="cs"?hCS:hSW, v=t==="cs"?vCS:vSW;
+          for (const points of groups[t].values()) {
+            if(points.length<2) continue;
+            const used=new Set([0]);
+            while(used.size<points.length) {
+              let best=null, bestDist=Infinity;
+              for (const i of used) for(let j=0;j<points.length;j++) {
+                if(used.has(j)) continue;
+                const d=Math.abs(points[i].r-points[j].r)+Math.abs(points[i].c-points[j].c);
+                if(d<bestDist) {bestDist=d;best=[i,j];}
+              }
+              if(!best) break;
+              const [i,j]=best, a=points[i], b=points[j];
+              // Horizontal then vertical; this is a proxy, not a pad-safe route.
+              for(let c=Math.min(a.c,b.c);c<Math.max(a.c,b.c);c++) h[a.r][c]++;
+              for(let r=Math.min(a.r,b.r);r<Math.max(a.r,b.r);r++) v[r][b.c]++;
+              if(t==="cs") lengthCS+=bestDist; else lengthSW+=bestDist;
+              used.add(j);
+            }
+          }
+        }
+        return {hCS,vCS,hSW,vSW,lengthCS,lengthSW,csN:groups.cs.size,swN:groups.sw.size};
+      }
+
+      function pcbEvaluate(positions, map, cols, rows, pitch, p) {
+        const bounds=positions.length?{
+          minC:Math.min(...positions.map(x=>x.c)),maxC:Math.max(...positions.map(x=>x.c)),
+          minR:Math.min(...positions.map(x=>x.r)),maxR:Math.max(...positions.map(x=>x.r))
+        }:{minC:0,maxC:0,minR:0,maxR:0};
+        const arrayW=(bounds.maxC-bounds.minC)*pitch+p.footW+2*p.margin;
+        const arrayH=(bounds.maxR-bounds.minR)*pitch+p.footH+2*p.margin;
+        const boardW=Math.max(arrayW,p.neckW), boardH=arrayH+p.neckH;
+        const boardArea=arrayW*arrayH+p.neckW*p.neckH;
+        const hGap=pitch-p.footW, vGap=pitch-p.footH;
+        const capH=pcbCorridorCapacity(hGap,p.trace,p.clear);
+        const capV=pcbCorridorCapacity(vGap,p.trace,p.clear);
+        const viaGap=Math.min(hGap,vGap)>=p.via+2*p.clear;
+        const demand=pcbNetDemand(positions,map,cols,rows);
+        const maxH={cs:0,sw:0},maxV={cs:0,sw:0};
+        for(const t of ["cs","sw"]) {
+          for(const row of demand[t==="cs"?"hCS":"hSW"]) for(const n of row) maxH[t]=Math.max(maxH[t],n);
+          for(const row of demand[t==="cs"?"vCS":"vSW"]) for(const n of row) maxV[t]=Math.max(maxV[t],n);
+        }
+        const worstRatio=Math.max(
+          maxH.cs/(capH||0.00001),maxH.sw/(capH||0.00001),
+          maxV.cs/(capV||0.00001),maxV.sw/(capV||0.00001));
+        // Driver fanout estimate assumes all unique CS nets on one layer and all
+        // unique SW nets on the other, spreading across a clear neck cross-section.
+        const neckCapacity=pcbCorridorCapacity(p.neckW-2*p.margin,p.trace,p.clear);
+        const fanoutRatio=Math.max(demand.csN,demand.swN)/(neckCapacity||0.00001);
+        const valid=positions.every(x=>map[x.k]&&Number.isInteger(map[x.k].cs)&&Number.isInteger(map[x.k].sw));
+        const collision=hGap<0||vGap<0;
+        const pass=valid&&!collision&&worstRatio<=1&&fanoutRatio<=1;
+        return {positions,map,cols,rows,pitch,p,bounds,arrayW,arrayH,boardW,boardH,boardArea,
+          hGap,vGap,capH,capV,viaGap,demand,maxH,maxV,worstRatio,fanoutRatio,neckCapacity,valid,collision,pass};
+      }
+
+      function pcbCurrent(pitch=state.pitch, p=pcbSettings()) {
+        if(!p) return null;
+        return pcbEvaluate(installed(),state.map,state.cols,state.rows,pitch,p);
+      }
+
+      function pcbStat(label,value) {
+        return `<div class="pcb-stat"><strong>${value}</strong><small>${label}</small></div>`;
+      }
+      function pcbNumber(n) {return Number.isFinite(n)?n.toFixed(1):"—";}
+      function pcbRatio(n) {return Number.isFinite(n)?`${(n*100).toFixed(0)}%`:"—";}
+
+      function pcbDrawHeat(e) {
+        const cv=$("pcbHeat"), ctx=cv.getContext("2d");
+        const W=cv.width,H=cv.height;
+        ctx.clearRect(0,0,W,H);ctx.fillStyle="#0b1422";ctx.fillRect(0,0,W,H);
+        if(!e||!e.positions.length) return;
+        const {cols,rows,demand,capH,capV}=e;
+        const scale=Math.min((W-72)/Math.max(1,cols-1),(H-72)/Math.max(1,rows-1));
+        const x0=(W-(cols-1)*scale)/2,y0=(H-(rows-1)*scale)/2;
+        const mode=$("pcbHeatMode").value;
+        const ratio=(a,b,cap)=>Math.max(0, (mode==="cs"?a:mode==="sw"?b:Math.max(a,b))/(cap||0.00001));
+        const colour=(v)=>v>1?"#fa777c":v>0.7?"#e8ad62":v>0?"#6ed4ae":"#26384d";
+        ctx.lineWidth=Math.max(2,Math.min(8,scale*.18));ctx.lineCap="round";
+        for(let r=0;r<rows;r++) for(let c=0;c<cols-1;c++) {
+          const v=ratio(demand.hCS[r][c],demand.hSW[r][c],capH);
+          ctx.strokeStyle=colour(v);ctx.beginPath();ctx.moveTo(x0+c*scale,y0+r*scale);ctx.lineTo(x0+(c+1)*scale,y0+r*scale);ctx.stroke();
+        }
+        for(let r=0;r<rows-1;r++) for(let c=0;c<cols;c++) {
+          const v=ratio(demand.vCS[r][c],demand.vSW[r][c],capV);
+          ctx.strokeStyle=colour(v);ctx.beginPath();ctx.moveTo(x0+c*scale,y0+r*scale);ctx.lineTo(x0+c*scale,y0+(r+1)*scale);ctx.stroke();
+        }
+        const mask=new Set(e.positions.map(p=>p.k));
+        for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) {
+          if(!mask.has(key(r,c)))continue;
+          ctx.fillStyle="#e5ecf7";ctx.beginPath();ctx.arc(x0+c*scale,y0+r*scale,Math.max(1.5,Math.min(3.8,scale*.13)),0,2*Math.PI);ctx.fill();
+        }
+        ctx.font="12px system-ui";
+        const labels=[["Low demand", "#6ed4ae"],["Crowded", "#e8ad62"],["Exceeds proxy capacity", "#fa777c"]];
+        let px=12;
+        for(const [label,color] of labels){ctx.fillStyle=color;ctx.fillRect(px,H-20,9,9);px+=14;ctx.fillStyle="#bdcbe0";ctx.fillText(label,px,H-11);px+=ctx.measureText(label).width+20;}
+      }
+
+      function pcbUpdate() {
+        const p=pcbSettings();
+        if(!p){$("pcbSummary").textContent="Enter positive footprint, trace, clearance, via and neck-width dimensions.";return;}
+        const e=pcbCurrent(state.pitch,p);lastPCB=e;
+        const v=mappingValidation();
+        $("pcbSummary").innerHTML=[
+          pcbStat("Installed LEDs",`${e.positions.length} / 351`),
+          pcbStat("LED array envelope",`${pcbNumber(e.arrayW)} × ${pcbNumber(e.arrayH)} mm`),
+          pcbStat("T-shaped board bounding box",`${pcbNumber(e.boardW)} × ${pcbNumber(e.boardH)} mm`),
+          pcbStat("T-shaped board area proxy",`${pcbNumber(e.boardArea/100)} cm²`),
+          pcbStat("Theoretical tracks in horizontal gap / layer",e.capH),
+          pcbStat("Theoretical tracks in vertical gap / layer",e.capV),
+          pcbStat("Max abstract corridor demand / capacity",pcbRatio(e.worstRatio)),
+          pcbStat("Controller neck fanout demand / capacity",pcbRatio(e.fanoutRatio)),
+          pcbStat("Unique nets CS / SW",`${e.demand.csN} / ${e.demand.swN}`),
+          pcbStat("Via body fits clear gap?",e.viaGap?"Possible":"No / uncertain")
+        ].join("");
+        const warnings=[];
+        if(!v.good)warnings.push(`Mapping incomplete/invalid (${v.missing} missing, ${v.duplicates} duplicates, ${v.invalid} invalid). Generate mapping first.`);
+        if(e.collision)warnings.push("Footprint bounding boxes overlap at this pitch.");
+        if(e.worstRatio>1)warnings.push("Abstract matrix net demand exceeds the simplified corridor capacity somewhere.");
+        if(e.fanoutRatio>1)warnings.push("Controller-neck fanout may be too narrow for all used nets in the assumed split-layer model.");
+        if(!e.viaGap)warnings.push("A via plus two clearances may not fit in the gap between LED bounding boxes.");
+        if(!warnings.length)warnings.push("No issue flagged by these simplified checks. Real routing may still fail due to pads, branches, vias, escape routing and return planes.");
+        $("pcbWarnings").textContent=warnings.join(" ");
+        $("pcbWarnings").className="help "+(warnings.length===1&&warnings[0].startsWith("No issue")?"good":"bad");
+        pcbDrawHeat(e);
+        const cases=[[16,16],[18,18],[19,18],[13,27]];
+        $("pcbCandidates").innerHTML=cases.map(([c,r])=>{
+          const pos=Array.from({length:c*r},(_,i)=>({r:Math.floor(i/c),c:i%c,k:key(Math.floor(i/c),i%c)}));
+          const ev=pcbEvaluate(pos,pcbSequentialMap(pos),c,r,state.pitch,p);
+          return `<tr><td>${c}×${r}</td><td>${c*r}</td><td>${pcbNumber(ev.arrayW)}×${pcbNumber(ev.arrayH)} mm</td><td class="${ev.pass?"good":"bad"}">${ev.pass?"No proxy flag":"Review"}</td></tr>`;
+        }).join("");
+      }
+
+      function pcbSuggest() {
+        const p=pcbSettings();if(!p){alert("Enter valid PCB parameters first.");return;}
+        const v=mappingValidation();
+        if(!v.good){alert("Generate a complete valid CS/SW mapping first.");return;}
+        let candidate=null;
+        for(let n=10;n<=200;n++) {
+          const pitch=n/10, e=pcbCurrent(pitch,p);
+          if(e.pass&&e.viaGap){candidate=e;break;}
+        }
+        if(!candidate){alert("No candidate pitch between 1.0 and 20.0 mm passes these proxy checks. Try adjusting the layout, mapping or controller neck width. This is not proof of impossibility.");return;}
+        if(!confirm(`Candidate pitch: ${candidate.pitch.toFixed(1)} mm. Approx. LED array ${pcbNumber(candidate.arrayW)} × ${pcbNumber(candidate.arrayH)} mm; board bounding box ${pcbNumber(candidate.boardW)} × ${pcbNumber(candidate.boardH)} mm.\n\nApply this pitch to the visual simulator? (The visual slider supports up to 10 mm.)`))return;
+        state.pitch=candidate.pitch;
+        $("pitch").max=Math.max(10,Math.ceil(candidate.pitch));
+        $("pitch").value=candidate.pitch;
+        refresh();
+      }
+
+      function pcbExportProposal() {
+        const e=pcbCurrent();if(!e){alert("Enter valid PCB settings first.");return;}
+        const pairs=[
+          ["type","preliminary heuristic — not DRC verified"],["installed_leds",e.positions.length],
+          ["columns",e.cols],["rows",e.rows],["pitch_mm",e.pitch],
+          ["footprint_width_mm",e.p.footW],["footprint_height_mm",e.p.footH],
+          ["trace_width_mm",e.p.trace],["clearance_mm",e.p.clear],["via_diameter_mm",e.p.via],
+          ["edge_margin_mm",e.p.margin],["controller_neck_width_mm",e.p.neckW],
+          ["controller_neck_height_mm",e.p.neckH],
+          ["array_width_mm",e.arrayW],["array_height_mm",e.arrayH],
+          ["board_bounding_width_mm",e.boardW],["board_bounding_height_mm",e.boardH],
+          ["board_T_area_mm2",e.boardArea],
+          ["horizontal_tracks_per_layer",e.capH],["vertical_tracks_per_layer",e.capV],
+          ["max_proxy_corridor_demand_ratio",e.worstRatio],
+          ["neck_fanout_ratio",e.fanoutRatio],["valid_mapping",mappingValidation().good],
+          ["via_body_gap_possible",e.viaGap],
+          ["limitations","Does not model pad geometry, actual routed trace lengths, real vias, power or thermal behavior"]
+        ];
+        const quote=x=>'"'+String(x).replaceAll('"','""')+'"';
+        download("LED_V2_PCB_size_estimate.csv", "parameter,value\n"+pairs.map(p=>p.map(quote).join(",")).join("\n"),"text/csv");
+      }
+
+      function pcbBind() {
+        for(const id of PCB_IDS) $(id).addEventListener("input",pcbUpdate);
+        $("pcbHeatMode").addEventListener("change",()=>pcbDrawHeat(lastPCB));
+        $("pcbEvaluate").onclick=pcbUpdate;
+        $("pcbSuggest").onclick=pcbSuggest;
+        $("pcbExport").onclick=pcbExportProposal;
+      }
+
+
+      // ================================================================
+      // BOARD SHAPE GENERATOR
+      // Candidate silhouettes only; this does not route physical traces.
+      // ================================================================
+      const SHAPE_IDS = [
+        "shapeMode", "shapePriority", "shapeBuffer", "shapeMinWeb",
+        "shapeControllerW", "shapeExtensionH", "shapeConnectorW",
+        "shapeConnectorD", "shapeConnectorInset", "shapeAlign"
+      ];
+      let lastShape = null;
+
+      function shapeParameters() {
+        const p = pcbSettings();
+        if (!p) return null;
+        const number = (id) => Number($(id).value);
+        const s = {
+          mode: $("shapeMode").value,
+          priority: number("shapePriority") / 100,
+          buffer: number("shapeBuffer"),
+          minWeb: number("shapeMinWeb"),
+          controllerW: number("shapeControllerW"),
+          extensionH: number("shapeExtensionH"),
+          connectorW: number("shapeConnectorW"),
+          connectorD: number("shapeConnectorD"),
+          connectorInset: number("shapeConnectorInset"),
+          align: $("shapeAlign").value,
+          pcb: p
+        };
+        const checks = [s.priority, s.buffer, s.minWeb, s.controllerW,
+          s.extensionH, s.connectorW, s.connectorD, s.connectorInset];
+        if (checks.some(v => !Number.isFinite(v) || v < 0)) return null;
+        if (s.minWeb < 1 || s.controllerW < 1 || s.extensionH < 1) return null;
+        return s;
+      }
+
+      function shapeInstalledBounds(points) {
+        const columns = points.map(p => p.c);
+        const rows = points.map(p => p.r);
+        return {
+          minC: Math.min(...columns), maxC: Math.max(...columns),
+          minR: Math.min(...rows), maxR: Math.max(...rows)
+        };
+      }
+
+      function shapeExpandToWidth(left, right, minimum) {
+        if (right - left >= minimum) return [left, right];
+        const mid = (left + right) / 2;
+        return [mid - minimum / 2, mid + minimum / 2];
+      }
+
+      function shapeBands(points, mode, s) {
+        const bounds = shapeInstalledBounds(points);
+        const pitch = state.pitch;
+        const guard = s.pcb.margin + s.buffer;
+        const rowBands = [];
+        const byRow = new Map();
+
+        for (const p of points) {
+          if (!byRow.has(p.r)) byRow.set(p.r, []);
+          byRow.get(p.r).push(p.c);
+        }
+
+        // Row spans are in *millimetres* around installed LED footprints.
+        // Empty physical rows between occupied rows are bridged rather than
+        // generating disconnected pieces of PCB.
+        for (let r = bounds.minR; r <= bounds.maxR; r++) {
+          const own = byRow.get(r);
+          let columns = own;
+          if (!columns) {
+            const nearby = [...byRow.keys()].sort((a, b) =>
+              Math.abs(a - r) - Math.abs(b - r)
+            );
+            columns = byRow.get(nearby[0]);
+          }
+          rowBands.push({
+            r,
+            left: (Math.min(...columns) - bounds.minC) * pitch
+              - s.pcb.footW / 2 - guard,
+            right: (Math.max(...columns) - bounds.minC) * pitch
+              + s.pcb.footW / 2 + guard
+          });
+        }
+
+        const fullLeft = -s.pcb.footW / 2 - guard;
+        const fullRight = (bounds.maxC - bounds.minC) * pitch
+          + s.pcb.footW / 2 + guard;
+
+        if (mode === "rectangle") {
+          rowBands.forEach(b => { b.left = fullLeft; b.right = fullRight; });
+        } else if (mode === "balanced") {
+          // Group adjacent rows into 3-row bands. Wider, straighter board
+          // edges reduce small manufacturing notches and give more route space.
+          const before = rowBands.map(b => ({ ...b }));
+          const groupSize = 3;
+          for (let start = 0; start < before.length; start += groupSize) {
+            const block = before.slice(start, start + groupSize);
+            const left = Math.min(...block.map(b => b.left));
+            const right = Math.max(...block.map(b => b.right));
+            for (let j = start; j < Math.min(before.length, start+groupSize); j++) {
+              rowBands[j].left = left;
+              rowBands[j].right = right;
+            }
+          }
+        }
+
+        // Avoid structural pinches and enforce a minimum overlap between
+        // consecutive rows. Still a heuristic; mechanical loads are unknown.
+        const minWidth = Math.max(s.minWeb, s.pcb.via + 2 * s.pcb.clear);
+        for (const b of rowBands) {
+          [b.left, b.right] = shapeExpandToWidth(b.left, b.right, minWidth);
+        }
+        for (let i = 1; i < rowBands.length; i++) {
+          const a = rowBands[i - 1], b = rowBands[i];
+          const needed = Math.min(minWidth, 8);
+          const overlap = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+          if (overlap < needed) {
+            const midpoint = (a.left + a.right + b.left + b.right) / 4;
+            a.left = Math.min(a.left, midpoint - needed / 2);
+            a.right = Math.max(a.right, midpoint + needed / 2);
+            b.left = Math.min(b.left, midpoint - needed / 2);
+            b.right = Math.max(b.right, midpoint + needed / 2);
+          }
+        }
+        return { rowBands, bounds, guard };
+      }
+
+      function shapePolygon(points, mode, s) {
+        const { rowBands, bounds, guard } = shapeBands(points, mode, s);
+        const pitch = state.pitch;
+        const top = -s.pcb.footH / 2 - guard;
+        const bottom = (bounds.maxR - bounds.minR) * pitch
+          + s.pcb.footH / 2 + guard;
+        const stepY = (i) => ((rowBands[i].r - bounds.minR) + 0.5) * pitch;
+        const upperMin = Math.min(...rowBands.map(b => b.left));
+        const upperMax = Math.max(...rowBands.map(b => b.right));
+        const parentBottom = rowBands[rowBands.length - 1];
+        const proposedWidth = Math.max(
+          s.controllerW,
+          s.connectorW + 2 * (s.pcb.clear + 1),
+          s.minWeb,
+          s.pcb.neckW  // Keep the existing estimator's neck assumption.
+        );
+        const requiredHeight = s.connectorD + s.connectorInset + 4;
+        const extension = Math.max(s.extensionH, requiredHeight);
+        let cx = (upperMin + upperMax) / 2;
+
+        if (s.align === "left") cx = upperMin + proposedWidth / 2;
+        if (s.align === "right") cx = upperMax - proposedWidth / 2;
+
+        // Always keep the tab attached to the bottommost matrix band.
+        // Even an irregular LED mask must not make a floating connector.
+        const overlap = Math.min(s.minWeb / 2, 7);
+        const minCX = parentBottom.left + overlap - proposedWidth / 2;
+        const maxCX = parentBottom.right - overlap + proposedWidth / 2;
+        cx = clamp(cx, minCX, maxCX);
+        const extLeft = cx - proposedWidth / 2;
+        const extRight = cx + proposedWidth / 2;
+        const extBottom = bottom + extension;
+
+        const path = [];
+        function put(x, y) {
+          const last = path[path.length - 1];
+          if (!last || Math.abs(last.x-x)>1e-7 || Math.abs(last.y-y)>1e-7)
+            path.push({ x, y });
+        }
+        put(rowBands[0].left, top);
+        put(rowBands[0].right, top);
+        for (let i = 0; i < rowBands.length; i++) {
+          const y = i === rowBands.length - 1 ? bottom : stepY(i);
+          put(rowBands[i].right, y);
+          if (i + 1 < rowBands.length) put(rowBands[i + 1].right, y);
+        }
+        // At the bottom: a mandatory magnetic-connector/controller tab.
+        put(extRight, bottom);
+        put(extRight, extBottom);
+        put(extLeft, extBottom);
+        put(extLeft, bottom);
+        put(parentBottom.left, bottom);
+        for (let i = rowBands.length - 1; i >= 0; i--) {
+          const y = i === 0 ? top : stepY(i - 1);
+          put(rowBands[i].left, y);
+          if (i > 0) put(rowBands[i - 1].left, y);
+        }
+        // Close implicitly: do not duplicate the first vertex at the end.
+        if (path.length > 1 &&
+          Math.abs(path[0].x-path[path.length-1].x)<1e-7 &&
+          Math.abs(path[0].y-path[path.length-1].y)<1e-7) path.pop();
+        // Remove consecutive collinear points to avoid artificial corners.
+        let reduced = path;
+        for (let retry = 0; retry < 3; retry++) {
+          reduced = reduced.filter((b, i, a) => {
+            const prev = a[(i + a.length - 1) % a.length];
+            const next = a[(i + 1) % a.length];
+            const cross = (b.x-prev.x)*(next.y-b.y) -
+                          (b.y-prev.y)*(next.x-b.x);
+            return Math.abs(cross)>1e-7;
+          });
+        }
+        if (reduced.length < 4) reduced = path;
+
+        const xs = reduced.map(p => p.x), ys = reduced.map(p => p.y);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+        const minY = Math.min(...ys), maxY = Math.max(...ys);
+        let signedArea = 0, perimeter = 0;
+        for (let i = 0; i < reduced.length; i++) {
+          const a = reduced[i], b = reduced[(i+1)%reduced.length];
+          signedArea += a.x*b.y - b.x*a.y;
+          perimeter += Math.hypot(a.x-b.x, a.y-b.y);
+        }
+        return {
+          mode, path: reduced, area: Math.abs(signedArea) / 2,
+          perimeter, bends: reduced.length, width: maxX-minX,
+          height: maxY-minY, minX, maxX, minY, maxY,
+          centreX: cx, extLeft, extRight, extTop: bottom,
+          extBottom, extWidth: proposedWidth, extHeight: extension,
+          ledBounds: bounds, guard, rowBands,
+          connector: {
+            left: cx-s.connectorW/2,
+            top: extBottom - s.connectorInset - s.connectorD,
+            width: s.connectorW, depth: s.connectorD
+          },
+          centroidShift: Math.abs(cx-(upperMin+upperMax)/2),
+          minRowWidth: Math.min(...rowBands.map(b=>b.right-b.left))
+        };
+      }
+
+      function shapeCompute() {
+        const s = shapeParameters();
+        if (!s) return null;
+        const points = installed();
+        if (!points.length) return { error: "Add at least one installed LED first." };
+
+        const choices = ["rectangle", "balanced", "compact"].map(m =>
+          shapePolygon(points, m, s)
+        );
+        const rectangle = choices[0];
+        const routingPriority = s.priority;
+
+        // Transparent heuristic: trade outline area against turns/notches.
+        // A high routing preference penalises jagged edge cuts and narrow webs.
+        for (const c of choices) {
+          const extraTurns = Math.max(0, c.bends - rectangle.bends);
+          const cornerPenalty = extraTurns * (5 + 50 * routingPriority);
+          const narrowPenalty = Math.max(0, s.minWeb+2-c.minRowWidth)*50;
+          c.score = c.area + cornerPenalty + narrowPenalty;
+        }
+        const winner = s.mode === "auto"
+          ? choices.reduce((best, item) => item.score < best.score ? item : best)
+          : choices.find(c => c.mode === s.mode);
+        const proxy = pcbCurrent();
+        const validation = mappingValidation();
+        return { winner, choices, rectangle, points, s, proxy, validation };
+      }
+
+      function shapeMetric(label, value) {
+        return `<div class="outline-result"><b>${value}</b><small>${label}</small></div>`;
+      }
+
+      function shapeRender(result) {
+        const canvas = $("shapeCanvas"), ctx = canvas.getContext("2d");
+        const W = canvas.width, H = canvas.height;
+        ctx.fillStyle = "#091220";
+        ctx.fillRect(0, 0, W, H);
+        if (!result || result.error) return;
+        const { winner: q, rectangle, s, points } = result;
+        const scale = Math.min((W-92)/q.width, (H-95)/q.height);
+        const offX = (W-q.width*scale)/2, offY = (H-q.height*scale)/2;
+        const X = (mm) => offX+(mm-q.minX)*scale;
+        const Y = (mm) => offY+(mm-q.minY)*scale;
+        const outline = (path) => {
+          ctx.beginPath();
+          path.forEach((p,i) => i ? ctx.lineTo(X(p.x),Y(p.y)) : ctx.moveTo(X(p.x),Y(p.y)));
+          ctx.closePath();
+        };
+        ctx.setLineDash([5,5]);
+        outline(rectangle.path);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#44566d";
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        outline(q.path);
+        ctx.fillStyle = "rgba(27,89,100,0.37)";
+        ctx.fill();
+        ctx.lineWidth = 2.7;
+        ctx.strokeStyle = "#5fe1d5";
+        ctx.stroke();
+
+        // Controller allowance: conceptual driver location, not pad placement.
+        const x = X(q.extLeft), y = Y(q.extTop);
+        const w = q.extWidth*scale, h = q.extHeight*scale;
+        ctx.fillStyle = "rgba(139,103,222,0.19)";
+        ctx.fillRect(x+1, y+1, w-2, h-2);
+        ctx.strokeStyle = "#b29ae9";
+        ctx.setLineDash([4,4]);
+        ctx.strokeRect(x+3, y+3, w-6, h-6);
+        ctx.setLineDash([]);
+
+        const connector = q.connector;
+        ctx.fillStyle = "rgba(80,153,255,0.72)";
+        ctx.fillRect(X(connector.left), Y(connector.top),
+          connector.width*scale, connector.depth*scale);
+        ctx.strokeStyle = "#a9c9fc";
+        ctx.strokeRect(X(connector.left), Y(connector.top),
+          connector.width*scale, connector.depth*scale);
+        ctx.textAlign = "center";
+        ctx.font = "12px system-ui";
+        ctx.fillStyle = "#e4edfa";
+        ctx.fillText("MAGNETIC CONNECTOR", X(q.centreX),
+          Math.min(H-13,Y(q.extBottom)+18));
+
+        const present = points.map(p => ({
+          x: (p.c-q.ledBounds.minC)*state.pitch,
+          y: (p.r-q.ledBounds.minR)*state.pitch
+        }));
+        const dot = Math.min(5.5, Math.max(1.5, s.pcb.footW/2*scale));
+        for (const p of present) {
+          ctx.beginPath();
+          ctx.arc(X(p.x),Y(p.y),dot,0,Math.PI*2);
+          ctx.fillStyle = "#ffbc65";
+          ctx.fill();
+        }
+        ctx.fillStyle = "#cad9ed";
+        ctx.font = "13px system-ui";
+        ctx.textAlign = "left";
+        ctx.fillText(`${q.mode.toUpperCase()} · ${points.length} LEDs`, 18, 26);
+        ctx.fillText(`${q.width.toFixed(1)} × ${q.height.toFixed(1)} mm overall`, 18, 44);
+        ctx.font = "11px system-ui";
+        ctx.fillStyle = "#889bb3";
+        ctx.fillText("Dashed: reference rectangular outline", 18, H-17);
+      }
+
+      function shapeUpdate() {
+        const r = shapeCompute();
+        lastShape = r;
+        if (!r || r.error) {
+          $("shapeStats").textContent = r?.error || "Check Board Shape and PCB Estimator settings.";
+          $("shapeOptions").replaceChildren();
+          $("shapeWarning").textContent = "No usable outline generated.";
+          shapeRender(null);
+          return;
+        }
+        const { winner: q, rectangle, proxy, validation, s } = r;
+        const saving = rectangle.area > 0 ? 100*(1-q.area/rectangle.area) : 0;
+        const fit = q.width <= setting("areaW") && q.height <=
+          setting("areaH") + q.extHeight;
+        $("shapePriorityLabel").textContent = `${Math.round(s.priority*100)}% routing preference`;
+        $("shapeStats").innerHTML = [
+          shapeMetric("Recommended strategy", q.mode),
+          shapeMetric("PCB total area", `${(q.area/100).toFixed(2)} cm²`),
+          shapeMetric("Overall bounding size", `${q.width.toFixed(1)} × ${q.height.toFixed(1)} mm`),
+          shapeMetric("Area saved vs rectangular", `${saving.toFixed(1)}%`),
+          shapeMetric("Outline turns", q.bends),
+          shapeMetric("Controller extension", `${q.extWidth.toFixed(1)} × ${q.extHeight.toFixed(1)} mm`),
+          shapeMetric("Magnetic connector landing", `${q.connector.width.toFixed(1)} × ${q.connector.depth.toFixed(1)} mm`),
+          shapeMetric("Approx. routing indicator", !validation.good ? "Mapping incomplete" :
+            proxy && proxy.pass && proxy.viaGap ? "No proxy warning" : "Needs review")
+        ].join("");
+        const warning = [];
+        if (!validation.good) warning.push("Generate a complete CS/SW mapping in Electrical before trusting routing comparisons.");
+        if (proxy && (!proxy.pass || !proxy.viaGap)) warning.push("The existing routing proxy flags congestion or insufficient gap. A different outline cannot fix internal routing bottlenecks by itself.");
+        if (s.connectorD+s.connectorInset+4 > s.extensionH) warning.push("Controller extension height automatically increased to clear connector landing.");
+        if (s.controllerW < s.connectorW+2*s.pcb.clear) warning.push("Controller section width automatically increased for the connector.");
+        if (!fit) warning.push("Generated envelope exceeds available display dimensions or may conflict with enclosure space.");
+        warning.push("Not an autorouter or mechanical/thermal validation. Verify connector edge requirements, IC/capacitor footprints, bend strength, mounting and KiCad DRC before fabrication.");
+        $("shapeWarning").textContent = warning.join(" ");
+        $("shapeOptions").innerHTML = r.choices.map(c => {
+          const reduction = 100*(1-c.area/rectangle.area);
+          return `<tr${c===q?' style="color:#75dfaf"':''}><td>${c.mode}${c===q?' ★':''}</td><td>${(c.area/100).toFixed(2)} cm²</td><td>${c.bends}</td><td>${reduction.toFixed(1)}%</td></tr>`;
+        }).join("");
+        shapeRender(r);
+      }
+
+      function shapeFormat(n) { return Number(n.toFixed(3)); }
+      function shapeRelativePath(q) {
+        return q.path.map(p => ({x:shapeFormat(p.x-q.minX), y:shapeFormat(p.y-q.minY)}));
+      }
+      function shapeSvgDownload() {
+        if (!lastShape?.winner) return alert("Generate a board outline first.");
+        const q = lastShape.winner;
+        const verts = shapeRelativePath(q);
+        const points = verts.map(v=>`${v.x},${v.y}`).join(" ");
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${shapeFormat(q.width)}mm" height="${shapeFormat(q.height)}mm" viewBox="0 0 ${shapeFormat(q.width)} ${shapeFormat(q.height)}">\n`+
+          `  <polygon points="${points}" fill="none" stroke="#000000" stroke-width="0.12"/>\n`+
+          `</svg>\n`;
+        download("RENMIX_V2_board_outline_GUIDE.svg",svg,"image/svg+xml");
+      }
+      function shapeCsvDownload() {
+        if (!lastShape?.winner) return alert("Generate a board outline first.");
+        const rows = shapeRelativePath(lastShape.winner).map((p,i)=>`${i+1},${p.x},${p.y}`);
+        download("RENMIX_V2_board_outline_vertices.csv",
+          "vertex,x_mm,y_mm\n"+rows.join("\n"),"text/csv");
+      }
+      function shapePngDownload() {
+        $("shapeCanvas").toBlob(blob=>{
+          if(blob) download("RENMIX_V2_board_outline_preview.png",blob,"image/png");
+        });
+      }
+      function shapeBind() {
+        for (const id of SHAPE_IDS) $(id).addEventListener("input", shapeUpdate);
+        $("shapeGenerate").addEventListener("click", shapeUpdate);
+        $("shapeRouting").addEventListener("click", ()=>setTab("pcb"));
+        $("shapeSvg").addEventListener("click", shapeSvgDownload);
+        $("shapeCsv").addEventListener("click", shapeCsvDownload);
+        $("shapePng").addEventListener("click", shapePngDownload);
+      }
+
+      function bind() {
+        document
+          .querySelectorAll("[data-tab]")
+          .forEach((b) =>
+            b.addEventListener("click", () => setTab(b.dataset.tab))
+          );
+        document.querySelectorAll("[data-preset]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const [c, r] = b.dataset.preset.split(",").map(Number);
+            $("cols").value = c;
+            $("rows").value = r;
+            initGrid(c, r);
+          })
+        );
+        $("applyDims").onclick = () => {
+          const c = setting("cols"),
+            r = setting("rows");
+          if (
+            !Number.isInteger(c) ||
+            !Number.isInteger(r) ||
+            c < 1 ||
+            r < 1 ||
+            c > MAX_GRID_SIDE ||
+            r > MAX_GRID_SIDE
+          )
+            return alert("Enter whole-number rows and columns between 1 and 60.");
+          initGrid(c, r);
+        };
+        document.querySelectorAll("[data-tool]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              state.tool = b.dataset.tool;
+              document
+                .querySelectorAll("[data-tool]")
+                .forEach((x) => x.classList.toggle("active", x === b));
+            })
+        );
+        $("clear").onclick = () => {
+          state.light.fill(0);
+          refresh();
+        };
+        $("fill").onclick = () => {
+          state.light = state.light.map((_, i) => (state.present[i] ? 1 : 0));
+          refresh();
+        };
+        $("invert").onclick = () => {
+          state.light = state.light.map((l, i) =>
+            state.present[i] ? 1 - l : 0
+          );
+          refresh();
+        };
+        $("allLEDs").onclick = () => {
+          if (state.cols * state.rows > 351)
+            return alert("This grid contains more than 351 positions.");
+          state.present.fill(true);
+          refresh();
+        };
+        $("circle").onclick = applyCircleMask;
+        $("paint").oninput = () => {
+          $("paintValue").textContent = setting("paint") + "%";
+        };
+        $("color").oninput = () => {
+          state.color = $("color").value;
+          draw();
+        };
+        for (const id of [
+          "diam",
+          "pitch",
+          "master",
+          "glow",
+          "blur",
+          "diffuse",
+          "areaW",
+          "areaH",
+          "pkgW",
+          "pkgH",
+          "margin",
+        ])
+          $(id).oninput = () => {
+            if (id === "pitch") state.pitch = setting("pitch");
+            refresh();
+          };
+        $("engineering").onclick = () => {
+          state.view = "engineering";
+          $("engineering").classList.add("active");
+          $("product").classList.remove("active");
+          draw();
+        };
+        $("product").onclick = () => {
+          state.view = "product";
+          $("product").classList.add("active");
+          $("engineering").classList.remove("active");
+          draw();
+        };
+        $("play").onclick = () => {
+          state.playing = !state.playing;
+          $("play").textContent = state.playing ? "Pause" : "Play";
+        };
+        $("fitPitch").onclick = () => {
+          const max = Math.min(
+            (setting("areaW") - setting("pkgW") - 2 * setting("margin")) /
+              Math.max(1, state.cols - 1),
+            (setting("areaH") - setting("pkgH") - 2 * setting("margin")) /
+              Math.max(1, state.rows - 1)
+          );
+          if (max < 1)
+            return alert(
+              "Display area too small for selected package/margins."
+            );
+          state.pitch = Math.min(10, Math.floor(max * 10) / 10);
+          $("pitch").value = state.pitch;
+          refresh();
+        };
+        $("animationMode").onchange = draw;
+        $("scrollText").oninput = draw;
+        $("imageFile").onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            state.image = img;
+            URL.revokeObjectURL(url);
+            draw();
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            alert("Unable to load image");
+          };
+          img.src = url;
+        };
+        for (const id of [
+          "imgBrightness",
+          "contrast",
+          "threshold",
+          "conversion",
+          "zoom",
+          "offsetX",
+          "offsetY",
+        ])
+          $(id).oninput = draw;
+        $("bakeImage").onclick = () => {
+          const arr = imageBrightness(state.cols, state.rows);
+          if (!arr) return alert("Upload an image first.");
+          state.light = arr;
+          state.image = null;
+          $("imageFile").value = "";
+          refresh();
+        };
+        $("removeImage").onclick = () => {
+          state.image = null;
+          $("imageFile").value = "";
+          draw();
+        };
+        $("compareFileA").onchange = e => compareImport("A",e);
+        $("compareFileB").onchange = e => compareImport("B",e);
+        $("compareCurrentA").onclick = () => {
+          compareSaved.A={project:compareCurrentSnapshot(),name:"Current design (snapshot)"};
+          $("compareStatusA").textContent="A: captured current working design";
+          $("compareStatusA").className="compare-file-status ready";
+          draw();
+        };
+        for(const slot of ["A","B"]) $("compareClear"+slot).onclick = () => {
+          compareSaved[slot]=null;
+          $("compareStatus"+slot).textContent=slot==="A"?"A: current working design":"B: manual grid below (until imported)";
+          $("compareStatus"+slot).className="compare-file-status";
+          draw();
+        };
+        $("compareExportPng").onclick=compareExportImage;
+        $("applyCompare").onclick = () => {
+          const c = setting("bCols"),
+            r = setting("bRows");
+          if (
+            !Number.isInteger(c) ||
+            !Number.isInteger(r) ||
+            c < 1 ||
+            r < 1 ||
+            c * r > 351
+          )
+            return alert("Comparison B must contain 1–351 LEDs.");
+          state.bCols = c;
+          state.bRows = r;
+          compareSaved.B = null;
+          $("compareStatusB").textContent="B: manual grid";
+          $("compareStatusB").className="compare-file-status";
+          setTab("compare");
+        };
+        $("generate").onclick = generateMapping;
+        $("selectLed").onchange = showSelected;
+        $("assign").onclick = () => {
+          const k = $("selectLed").value,
+            cs = setting("editCs"),
+            sw = setting("editSw");
+          if (
+            !k ||
+            !Number.isInteger(cs) ||
+            !Number.isInteger(sw) ||
+            cs < 1 ||
+            cs > 39 ||
+            sw < 1 ||
+            sw > 9
+          )
+            return alert("CS 1–39 and SW 1–9 required.");
+          state.map[k] = { cs, sw };
+          refreshMapping();
+        };
+        $("unassign").onclick = () => {
+          delete state.map[$("selectLed").value];
+          refreshMapping();
+        };
+        $("mappingCsv").onclick = () =>
+          download(
+            "LED_CS_SW_mapping.csv",
+            rowsCSV(
+              ["reference", "row", "col", "x", "y", "cs", "sw"],
+              csvRows()
+            ),
+            "text/csv"
+          );
+        $("patternCsv").onclick = () =>
+          download(
+            "LED_pattern.csv",
+            rowsCSV(["reference", "row", "col", "brightness"], csvRows()),
+            "text/csv"
+          );
+        $("placementCsv").onclick = () =>
+          download(
+            "LED_KiCad_placement.csv",
+            rowsCSV(["reference", "x", "y"], csvRows()),
+            "text/csv"
+          );
+        $("saveProject").onclick = () => {
+          const snapshot = {
+            format: "led-matrix-design-studio",
+            version: 1,
+            cols: state.cols,
+            rows: state.rows,
+            pitch: state.pitch,
+            color: state.color,
+            present: state.present,
+            light: state.light,
+            map: state.map,
+            bCols: state.bCols,
+            bRows: state.bRows,
+            pcb: Object.fromEntries(PCB_IDS.map(id=>[id,$(id).value])),
+            shape: Object.fromEntries(SHAPE_IDS.map(id=>[id,$(id).value])),
+          };
+          download(
+            "LED_matrix_project.json",
+            JSON.stringify(snapshot, null, 2),
+            "application/json"
+          );
+        };
+        $("loadProject").onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          try {
+            const o = JSON.parse(await file.text());
+            if (
+              !Number.isInteger(o.cols) ||
+              !Number.isInteger(o.rows) ||
+              o.cols < 1 ||
+              o.rows < 1 ||
+              o.cols > MAX_GRID_SIDE ||
+              o.rows > MAX_GRID_SIDE ||
+              !Array.isArray(o.present) ||
+              o.present.length !== o.cols * o.rows ||
+              !Array.isArray(o.light) ||
+              o.light.length !== o.cols * o.rows ||
+              o.present.filter(Boolean).length > MAX
+            )
+              throw Error("Invalid project structure");
+            Object.assign(state, {
+              cols: o.cols,
+              rows: o.rows,
+              pitch: Number(o.pitch) || 5,
+              color: o.color || "#ffbc65",
+              present: o.present.map(Boolean),
+              light: o.light.map((v) => clamp(Number(v) || 0, 0, 1)),
+              map: o.map || {},
+              bCols: o.bCols || 18,
+              bRows: o.bRows || 18,
+            });
+            $("cols").value = state.cols;
+            $("rows").value = state.rows;
+            $("pitch").value = state.pitch;
+            $("color").value = state.color;
+            if(o.pcb && typeof o.pcb === "object") for(const id of PCB_IDS) {
+              if(Object.prototype.hasOwnProperty.call(o.pcb,id)) $(id).value = o.pcb[id];
+            }
+            if(o.shape && typeof o.shape === "object") for(const id of SHAPE_IDS) {
+              if(Object.prototype.hasOwnProperty.call(o.shape,id)) $(id).value = o.shape[id];
+            }
+            refresh();
+          } catch (err) {
+            alert("Could not load project: " + err.message);
+          }
+          e.target.value = "";
+        };
+        $("importCsv").onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          try {
+            const lines = (await file.text()).trim().split(/\r?\n/),
+              header = lines
+                .shift()
+                .split(",")
+                .map((x) => x.trim().toLowerCase());
+            for (const h of ["row", "col", "cs", "sw"])
+              if (!header.includes(h))
+                throw Error("Required headings: row,col,cs,sw");
+            const fresh = {};
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              const cells = line.split(","),
+                get = (k) => Number(cells[header.indexOf(k)]),
+                r = get("row"),
+                c = get("col"),
+                cs = get("cs"),
+                sw = get("sw");
+              if (
+                !Number.isInteger(r) ||
+                !Number.isInteger(c) ||
+                r < 0 ||
+                c < 0 ||
+                r >= state.rows ||
+                c >= state.cols ||
+                !state.present[r * state.cols + c] ||
+                !Number.isInteger(cs) ||
+                !Number.isInteger(sw) ||
+                cs < 1 ||
+                cs > 39 ||
+                sw < 1 ||
+                sw > 9 ||
+                fresh[key(r, c)]
+              )
+                throw Error("Invalid or duplicate position/channel");
+              fresh[key(r, c)] = { cs, sw };
+            }
+            state.map = fresh;
+            refresh();
+          } catch (err) {
+            alert("CSV import failed: " + err.message);
+          }
+          e.target.value = "";
+        };
+        $("exportPng").onclick = () => {
+          $("preview").toBlob((blob) => {
+            if (blob) download("LED_preview.png", blob, "image/png");
+          });
+        };
+        const cv = $("preview");
+        cv.onpointerdown = (e) => {
+          state.painting = true;
+          cv.setPointerCapture(e.pointerId);
+          paint(e);
+        };
+        cv.onpointermove = (e) => {
+          const p = cellFromEvent(e);
+          if (p && state.tab === "electrical") {
+            const a = state.map[key(p.r, p.c)];
+            cv.title = `Row ${p.r + 1}, Col ${p.c + 1}: ${
+              a ? "CS" + a.cs + " / SW" + a.sw : "unassigned"
+            }`;
+          }
+          if (state.painting) paint(e);
+        };
+        cv.onpointerup = () => (state.painting = false);
+        cv.onpointercancel = () => (state.painting = false);
+        window.addEventListener("resize", draw);
+      }
+      let previous = 0;
+      function frame(now) {
+        if (!previous) previous = now;
+        const delta = Math.min(0.1, (now - previous) / 1000);
+        previous = now;
+        if (state.playing && $("animationMode").value !== "static") {
+          state.time += delta;
+          draw();
+        }
+        requestAnimationFrame(frame);
+      }
+      state.present = Array(256).fill(true);
+      state.light = Array(256).fill(0);
+      bind();
+      pcbBind();
+      shapeBind();
+      generateMapping();
+      refresh();
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>
